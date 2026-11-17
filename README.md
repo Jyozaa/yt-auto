@@ -45,6 +45,6 @@ The audio command generates a mix and timing fixture without opening Chromium. U
 
 Story research and writing happen outside GitHub Actions. See [story intake](docs/story-intake.md) for the scheduled-task handoff and manual submission. See [YouTube setup](docs/youtube.md) for OAuth and private uploads. Uploading and public release each have an explicit opt-in.
 
-See [architecture](docs/architecture.md) for the asset vocabulary, timing, reviewers, repair behavior, and runner settings. The [visual engine audit](docs/VISUAL_ENGINE_GAP_ANALYSIS.md) details the source port, and [attribution](docs/attribution.md) lists reused code and assets.
+See [architecture](docs/architecture.md) for the asset vocabulary, timing, reviewers, repair behavior, and runner settings. The [visual engine audit](docs/VISUAL_ENGINE_GAP_ANALYSIS.md) details the source port. [Phase 3 verification](docs/phase-3-verification.md) records the visual checks and performance, and [attribution](docs/attribution.md) lists reused code and assets.
 
 The silent development composition reproduces the authored bridge world using the port and the bundled CC0 prop subset. Render selected frames with `npm run visual:stills -- --baseline --frames 45,540,1090,1510,1940`. Render a story frame by passing `--storyboard out/foucault-floor/full/storyboard.json` instead of `--baseline`. `SourceStyleBaseline` uses a separate Remotion entry and is outside the production queue.
