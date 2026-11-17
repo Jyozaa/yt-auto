@@ -1,11 +1,7 @@
 import {useLayoutEffect, useRef} from 'react';
-import {AbsoluteFill, Composition, cancelRender, registerRoot, useCurrentFrame, useVideoConfig} from 'remotion';
-import * as T from 'three';
-import {BlendFunction, BloomEffect, EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode} from 'postprocessing';
+import {AbsoluteFill, Composition, registerRoot, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Stage} from '../engine/world/stage';
-import {InkPass} from '../engine/effects/ink';
-import {LensBlur} from '../engine/effects/lensblur';
-import {GradeEffect, GRADES} from '../engine/effects/grade';
+import {makeLook} from './look';
 import {smooth} from '../engine/camera/choreography';
 import type {Film, Shot} from '../story/timeline';
 import {fps, storySchema, wordsOf} from '../story/schema';
@@ -23,45 +19,15 @@ export type Props = {
 };
 
 function makeView(canvas: HTMLCanvasElement, shot: Shot, film: Film, width: number, height: number, repair: boolean, samples: number) {
-  const renderer = new T.WebGLRenderer({canvas, antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance'});
-  renderer.setPixelRatio(1);
-  renderer.outputColorSpace = T.SRGBColorSpace;
-  renderer.toneMapping = T.NoToneMapping;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = T.PCFShadowMap;
-  renderer.debug.onShaderError = (gl, _program, vertex, fragment) => {
-    cancelRender(new Error(`WebGL shader failed: ${gl.getShaderInfoLog(vertex)} ${gl.getShaderInfoLog(fragment)}`));
-  };
   const stage = new Stage(shot, film.story, width, height);
-  const composer = new EffectComposer(renderer, {frameBufferType: T.HalfFloatType, multisampling: samples});
-  const ink = new InkPass(stage.scene, stage.camera, {widthNear: width < 540 ? 5.8 : 4.2, widthFar: 3.15});
-  const lens = new LensBlur({maxCoC: 24});
-  const bloom = new BloomEffect({blendFunction: BlendFunction.ADD, intensity: .42, luminanceThreshold: 1,
-    luminanceSmoothing: .18, mipmapBlur: true, levels: 4, radius: .62});
-  const tone = new ToneMappingEffect({mode: ToneMappingMode.NEUTRAL});
-  const grade = new GradeEffect(GRADES[shot.scene.light], repair ? .76 : 1);
-  composer.addPass(new RenderPass(stage.scene, stage.camera));
-  composer.addPass(ink);
-  if (shot.beat.camera.blur > 0) {
-    composer.addPass(new EffectPass(stage.camera, lens.pre));
-    composer.addPass(new EffectPass(stage.camera, lens.main));
-  }
-  composer.addPass(new EffectPass(stage.camera, bloom, tone, grade));
-  composer.setSize(width, height);
+  const blur = shot.beat.camera.blur > 0 || (shot.cameraKeys ?? []).some((key) => (key.blur ?? 0) > 0);
+  const look = makeLook(canvas, stage.scene, stage.camera, width, height, samples, blur);
   return {
     draw(frame: number) {
-      const focus = stage.update(frame, height);
-      lens.focus = focus.distance;
-      lens.cInf = focus.blur * (repair ? .62 : 1);
-      composer.render(1 / fps);
+      const focus = stage.update(frame);
+      look.draw(focus.distance, focus.blur, shot.scene.light, repair);
     },
-    dispose() {
-      if (shot.beat.camera.blur === 0) { lens.pre.dispose(); lens.main.dispose(); }
-      composer.dispose();
-      stage.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-    }
+    dispose() { look.dispose(); stage.dispose(); }
   };
 }
 

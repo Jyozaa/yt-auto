@@ -2,15 +2,16 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {Assembly} from './scenery';
 import {arch, cart, gear, rail, barrel, worktable, telescope} from './scenery';
-import {stepsPerSecond} from '../characters/gait';
-import {Actor} from '../characters/toon';
+import {StoryCast} from '../characters/story-cast';
+import {Batch, house, kitClone} from './build';
+import {makeSky, colorSky} from './sky';
 import {NOINK} from '../effects/ink';
-import {choreograph, clamp, smooth} from '../camera/choreography';
+import {cameraPose, choreograph, smooth} from '../camera/choreography';
 import {fps, type Story} from '../../story/schema';
 import type {Shot} from '../../story/timeline';
 import {LOOK, LIGHTS} from './lights';
 import {CHAR, TONE, twoTone, untone} from './shade';
-import {ctex, rep, planks, grass, stone, cloudHD, jit, cobble, facade} from './paint';
+import {ctex, rep, planksHD, grassHD, stoneHD, cloudHD, jit, cobbleHD} from './paint';
 
 const groundStone = () => ctex('rotunda-floor', 512, 512, (g, rand) => {
   g.fillStyle = '#937f79';
@@ -58,15 +59,29 @@ const earth = () => ctex('illustrative-earth', 768, 384, (g) => {
 type Group = T.Group;
 const TAU = Math.PI * 2;
 
+function flutedColumn() {
+  const geometry = new T.CylinderGeometry(.35, .42, 4.55, 96);
+  const position = geometry.getAttribute('position');
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), z = position.getZ(i);
+    const flute = 1 + .034 * Math.cos(12 * Math.atan2(z, x));
+    position.setXYZ(i, x * flute, position.getY(i), z * flute);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 export class Stage {
   readonly scene = new T.Scene();
   readonly camera: T.PerspectiveCamera;
   private readonly sun: T.DirectionalLight;
-  private readonly sky: T.ShaderMaterial;
+  private readonly sky: ReturnType<typeof makeSky>;
+  private readonly sunDirection: T.Vector3;
+  private readonly cast: StoryCast;
+  private readonly placements = new Map<string, T.Group>();
   private readonly materials = new Set<T.Material>();
   private readonly geometries = new Set<T.BufferGeometry>();
   private readonly textures = new Set<T.Texture>();
-  private readonly actors: {actor: Actor; entry: Shot['scene']['actors'][number]}[] = [];
   private readonly assembly: Assembly = {
     mesh: (...args) => this.mesh(...args), box: (...args) => this.box(...args), cylinder: (...args) => this.cylinder(...args)
   };
@@ -75,28 +90,41 @@ export class Stage {
   constructor(readonly shot: Shot, story: Story, width: number, height: number) {
     this.camera = new T.PerspectiveCamera(40, width / height, .17, 230);
     this.camera.layers.enable(NOINK);
-    const light = shot.scene.light;
-    const horizon = untone(LOOK[light].sky.c[0]);
-    this.scene.fog = new T.Fog(horizon, 17, 110);
-    this.sky = new T.ShaderMaterial({
-      side: T.BackSide, depthWrite: false,
-      uniforms: {horizon: {value: horizon}, zenith: {value: untone(LOOK[light].sky.c[4])}},
-      vertexShader: 'varying vec3 dir; void main(){dir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader: 'varying vec3 dir; uniform vec3 horizon; uniform vec3 zenith; void main(){gl_FragColor=vec4(mix(horizon,zenith,smoothstep(-.05,.62,normalize(dir).y)),1.);}'
-    });
-    const skyMesh = this.mesh(this.scene, new T.SphereGeometry(137, 20, 12), this.sky, 0, 0, 0);
-    skyMesh.layers.set(NOINK);
-    skyMesh.castShadow = false;
-    this.sun = new T.DirectionalLight('#fff0d4', 1.7);
-    this.sun.position.set(light === 'day' ? -9 : 5, light === 'day' ? 13 : 4, light === 'day' ? 6 : -8);
+    const light = shot.scene.light, lighting = LIGHTS[light], look = LOOK[light];
+    this.scene.fog = new T.Fog(untone(look.sky.c[0]), lighting.fogNear, lighting.fogFar);
+    this.sky = makeSky(190);
+    colorSky(this.sky, look.sky);
+    this.scene.add(this.sky);
+    this.materials.add(this.sky.material);
+    this.geometries.add(this.sky.geometry);
+    this.sun = new T.DirectionalLight(lighting.sunCol, lighting.sunI);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(this.sun.shadow.camera, {left: -12, right: 12, top: 12, bottom: -12, near: .5, far: 46});
-    this.sun.shadow.normalBias = .027;
-    this.sun.shadow.bias = -.0001;
-    this.sun.shadow.camera.updateProjectionMatrix();
+    const mapSize = width >= 1080 ? 2048 : 1024;
+    this.sun.shadow.mapSize.set(mapSize, mapSize);
+    Object.assign(this.sun.shadow.camera, {near: 1, far: 100});
+    this.sun.shadow.normalBias = lighting.normalBias;
+    this.sun.shadow.bias = lighting.bias;
     this.sun.shadow.camera.layers.enable(NOINK);
-    this.scene.add(this.sun, this.sun.target);
+    this.scene.add(this.sun, this.sun.target, new T.HemisphereLight(lighting.sky, lighting.ground, lighting.hemiI));
+    const heading = new T.Vector3();
+    const direction = new T.Vector3();
+    for (let frame = shot.start; frame < shot.end; frame += 6) {
+      const pose = cameraPose(shot, frame, (id) => {
+        const entry = [...shot.scene.actors, ...shot.scene.props].find((placement) => placement.id === id);
+        return entry && direction.set(...entry.at);
+      });
+      direction.copy(pose.look).sub(pose.position).setY(0);
+      heading.add(direction.normalize());
+    }
+    if (!heading.lengthSq()) heading.set(0, 0, -1);
+    heading.normalize();
+    // A higher side key reaches the tabletop through the workshop windows.
+    const workshop = shot.scene.environment === 'workshop' && light === 'golden';
+    const az = T.MathUtils.degToRad(workshop ? 40 : lighting.az);
+    const el = T.MathUtils.degToRad(workshop ? 30 : lighting.el);
+    this.sunDirection = new T.Vector3(
+      (heading.x * Math.cos(az) - heading.z * Math.sin(az)) * Math.cos(el), Math.sin(el),
+      (heading.z * Math.cos(az) + heading.x * Math.sin(az)) * Math.cos(el));
     this.buildWorld(shot.scene.environment);
     this.batchScenery();
     for (const entry of shot.scene.props) {
@@ -105,18 +133,10 @@ export class Stage {
       group.scale.setScalar(entry.scale);
       group.rotation.y = T.MathUtils.degToRad(entry.yaw);
       this.scene.add(group);
+      this.placements.set(entry.id, group);
       this.prop(group, entry);
     }
-    const shadow = ctex('soft-contact', 64, 64, (g) => {
-      const ramp = g.createRadialGradient(32, 32, 2, 32, 32, 31);
-      ramp.addColorStop(0, '#282237b0'); ramp.addColorStop(.44, '#2822378e'); ramp.addColorStop(1, '#28223700');
-      g.fillStyle = ramp; g.fillRect(0, 0, 64, 64);
-    });
-    for (const entry of shot.scene.actors) {
-      const actor = new Actor(story.characters.find((c) => c.id === entry.character)!, shadow);
-      this.scene.add(actor.mesh, actor.shadow);
-      this.actors.push({actor, entry});
-    }
+    this.cast = new StoryCast(this.scene, shot, story);
   }
 
   private surface(color: string, map?: T.Texture) {
@@ -172,8 +192,7 @@ export class Stage {
       this.mesh(world, merged, batch[0].material as T.Material, 0, 0, 0);
       for (const mesh of batch) {
         world.remove(mesh);
-        this.geometries.delete(mesh.geometry);
-        mesh.geometry.dispose();
+        if (this.geometries.delete(mesh.geometry)) mesh.geometry.dispose();
       }
     }
   }
@@ -183,7 +202,7 @@ export class Stage {
     world.name = 'static-environment';
     this.scene.add(world);
     const floor = this.surface('#ffffff', this.repeat(
-      environment === 'workshop' ? planks() : environment === 'terrace' ? grass() : environment === 'street' ? cobble() : groundStone(), 22, 22));
+      environment === 'workshop' ? planksHD() : environment === 'terrace' ? grassHD() : environment === 'street' ? cobbleHD() : groundStone(), 15, 15));
     const base = this.mesh(world, new T.PlaneGeometry(104, 104), floor, 0, 0, 0);
     base.rotation.x = -Math.PI / 2;
     base.castShadow = false;
@@ -192,26 +211,13 @@ export class Stage {
       this.materials.add(base.material);
       return;
     }
-    const stoneWall = this.surface('#f0e0ca', this.repeat(stone(), 3, 4));
+    const stoneWall = this.surface('#f0e0ca', this.repeat(stoneHD(), 3, 2));
     const cream = this.surface('#d9c5a6');
     const band = this.surface('#917c72');
     const archDark = this.surface('#526779');
     const gold = this.surface('#ad8555');
     if (environment === 'street') {
-      const colors = ['#d4b496', '#cabb9b', '#b99a82', '#debf9d'];
-      for (let i = -2; i <= 2; i++) {
-        const x = i * 4.85;
-        const w = 4.75, h = 5.2 + Math.abs(i) * .72;
-        const paint = facade(`street-${i}`, w, h, {wall: colors[(i + 4) % colors.length], shutter: '#56676f', door: true, timber: i % 2 === 0});
-        const frontage = this.surface('#ffffff', paint);
-        this.box(world, stoneWall, x, h / 2, -8.58, w, h, 3.2);
-        this.mesh(world, new T.PlaneGeometry(w, h), frontage, x, h / 2, -6.97).castShadow = false;
-        this.box(world, band, x, h + .14, -8.50, w + .27, .27, 3.47);
-        this.box(world, cream, x, .14, -6.73, w, .28, .5);
-        const roof = this.cylinder(world, this.surface('#5c586c'), x, h + .77, -8.44, .16, w * .69, 1.55, 4);
-        roof.rotation.y = Math.PI / 4;
-        this.box(world, stoneWall, x + .65, h + 1.21, -9.03, .46, 1.32, .44);
-      }
+      this.buildStreet(world, false);
       return;
     }
     if (environment === 'rotunda' || environment === 'gallery') {
@@ -232,14 +238,11 @@ export class Stage {
         this.box(world, cream, x, 2.2, -9.79, .12, 2.56, .16);
         this.box(world, cream, x, 2.73, -9.79, 1.94, .13, .16);
       }
+      const column = flutedColumn();
       for (const [x, z] of [[-10,-7],[-6,-8.5],[-2,-8.5],[2,-8.5],[6,-8.5],[10,-7],[-8,1],[8,1],[-7.5,5],[7.5,5]]) {
         this.box(world, band, x, .17, z, 1.22, .34, 1.22);
         this.box(world, cream, x, .39, z, 1.02, .16, 1.02);
-        this.cylinder(world, cream, x, 2.68, z, .35, .42, 4.55, 22);
-        for (let k = 0; k < 12; k++) {
-          const a = k / 12 * TAU;
-          this.cylinder(world, cream, x + .39 * Math.cos(a), 2.64, z + .39 * Math.sin(a), .032, .041, 4.18, 6);
-        }
+        this.mesh(world, column, cream, x, 2.68, z);
         this.cylinder(world, gold, x, 4.85, z, .50, .39, .24);
         this.box(world, cream, x, 5.03, z, 1.03, .15, 1.03);
       }
@@ -268,12 +271,7 @@ export class Stage {
     }
     this.box(world, cream, 0, .1, 0, 15, .18, 16);
     this.box(world, band, 0, .42, -7.5, 16, .72, .6);
-    for (let i = 0; i < 10; i++) {
-      const x = (i - 4.5) * 3.45;
-      this.box(world, this.surface(i % 2 ? '#c7a990' : '#b28e7f'), x, 1.2, -15 - i % 3, 3, 4.6 + i % 3, 3.8);
-      const roof = this.cylinder(world, this.surface('#716d88'), x, 4.14 + (i % 3) / 2, -15 - i % 3, 0, 2.8, 1.4, 4);
-      roof.rotation.y = Math.PI / 4;
-    }
+    this.buildStreet(world, true);
     for (let i = 0; i < 5; i++) {
       const cloud = this.mesh(world, new T.PlaneGeometry(13, 6.5), new T.MeshBasicMaterial({
         map: cloudHD(i + 5, LOOK[this.shot.scene.light].cloud), transparent: true, depthWrite: false
@@ -283,16 +281,33 @@ export class Stage {
     }
   }
 
+  private buildStreet(world: Group, distant: boolean) {
+    const street = new T.Group();
+    const batch = new Batch();
+    const offset = distant ? -21 : -11;
+    for (let i = -2; i <= 2; i++) {
+      house(batch, i * 7.5, offset - Math.abs(i) * .88, -.08 * i, i % 2 ? 6.8 : 7.2, 5.1,
+        [6.2, 7.6, 8.6][(i + 3) % 3], i + 3, 0);
+    }
+    for (const sign of [-1, 1]) {
+      house(batch, sign * 12.6, offset - 14, -sign * .45, 7.2, 7, 8.6, sign > 0 ? 6 : 7, 0);
+      house(batch, sign * 6.7, offset - 24, sign * .22, 7.2, 7, 8.6, sign > 0 ? 2 : 5, 0);
+    }
+    batch.build(street);
+    world.add(street);
+    street.traverse((o) => { if (o instanceof T.Mesh) this.geometries.add(o.geometry); });
+  }
+
   private prop(g: Group, entry: Shot['scene']['props'][number]) {
     const {kind, id, color} = entry;
     const actions = this.shot.actions.filter((a) => a.target === id);
     const brass = this.surface(color ?? '#c99448');
     const dark = this.surface('#524551');
-    const wood = this.surface(color ?? '#bd8655', this.repeat(planks(), 1, 1));
+    const wood = this.surface(color ?? '#bd8655', this.repeat(planksHD(), 1, 1));
     const materials = {wood, dark, brass};
     const progress = (frame: number, k: 'roll' | 'spin') => actions.reduce((value, action) =>
       action.kind === k && 'amount' in action ? value + action.amount * smooth((frame - action.frame) / (action.duration * fps)) : value, 0);
-    if (kind === 'arch') { arch(this.assembly, g, this.surface(color ?? '#e0c4a2', stone()), dark); return; }
+    if (kind === 'arch') { arch(this.assembly, g, this.surface(color ?? '#e0c4a2', stoneHD()), dark); return; }
     if (kind === 'rail') { rail(this.assembly, g, materials); return; }
     if (kind === 'barrel') { barrel(this.assembly, g, materials); return; }
     if (kind === 'worktable') { worktable(this.assembly, g, materials); return; }
@@ -354,7 +369,9 @@ export class Stage {
         const tick = this.box(dial, dark, 2.27 * Math.sin(a), .236, 2.27 * Math.cos(a), .021, .006, length);
         tick.rotation.y = a;
       }
-      const spoke = this.box(dial, this.surface('#9b544d'), 0, .235, 0, 4.18, .01, .029);
+      const spoke = this.box(dial, this.surface('#9b544d'), 0, .239, 0, 4.18, .006, .029);
+      spoke.layers.set(NOINK);
+      spoke.castShadow = false;
       if (kind === 'turntable') {
         this.animators.push((f) => {
           dial.rotation.y = actions.reduce((angle, action) => 'amount' in action ?
@@ -373,6 +390,8 @@ export class Stage {
       this.cylinder(pivot, cord, 0, -7.54, 0, .031, .007, .135, 8);
       const traces = Array.from({length: 9}, (_, i) => {
         const mark = this.box(dial, this.surface(i % 2 ? '#9b544d' : '#826d58'), 0, .237 + i * .001, 0, 3.25, .007, .025);
+        mark.layers.set(NOINK);
+        mark.castShadow = false;
         const trace = actions.find((a) => a.kind === 'trace');
         mark.rotation.y = .24 + T.MathUtils.degToRad(trace && 'amount' in trace ? trace.amount : 0) * i / 8;
         return mark;
@@ -404,11 +423,9 @@ export class Stage {
       this.box(g, brass, 0, .52, 0, 1.17, .85, 1.17);
       this.box(g, dark, 0, .99, 0, 1.37, .14, 1.37);
     } else if (kind === 'tree') {
-      this.cylinder(g, wood, 0, 1.18, 0, .1, .22, 2.36, 9);
-      const leaves = this.surface(color ?? '#6a8c53');
-      for (const [x, y, z, r] of [[0,2.9,0,1.09],[-.65,2.5,.16,.82],[.68,2.76,.23,.86],[-.22,3.56,-.16,.73]]) {
-        this.mesh(g, new T.IcosahedronGeometry(r, 2), leaves, x, y, z);
-      }
+      const canopy = kitClone({}, 'tree_oak', 4)!;
+      g.add(canopy);
+      canopy.traverse((o) => { if (o instanceof T.Mesh) this.geometries.add(o.geometry); });
     } else {
       this.cylinder(g, dark, 0, .79, 0, .04, .13, 1.58, 12);
       this.cylinder(g, brass, 0, 1.57, 0, .2, .17, .12, 8);
@@ -419,7 +436,7 @@ export class Stage {
     }
   }
 
-  update(frame: number, height: number) {
+  update(frame: number) {
     const light = LIGHTS[this.shot.scene.light];
     TONE.uLitCol.value.set(...light.lit);
     TONE.uShadeCol.value.set(...light.shade);
@@ -434,47 +451,23 @@ export class Stage {
     CHAR.uGrad.value = light.charGrad;
     CHAR.uBodyGrad.value = light.bodyGrad;
     CHAR.uSideTint.value.set(...light.sideTint);
-    const lens = choreograph(this.camera, this.shot, frame);
     for (const animate of this.animators) animate(frame);
-    this.actors.forEach(({actor, entry}, index) => {
-      const actions = this.shot.actions.filter((a) => a.target === entry.id && frame >= a.frame);
-      const walk = actions.findLast((a) => a.kind === 'walk');
-      const at = new T.Vector3(...entry.at);
-      let stride = 0, cycle = 0;
-      const now = frame / fps;
-      if (walk?.kind === 'walk') {
-        const t = clamp((frame - walk.frame) / (walk.duration * fps));
-        at.lerp(new T.Vector3(...walk.to), t);
-        cycle = t * walk.duration * stepsPerSecond / 2;
-        stride = Math.min(1, 10 * t, 10 * (1 - t));
-        const path = new T.Vector3(...walk.to).sub(new T.Vector3(...entry.at)).length();
-        stride *= Math.min(1, path / Math.max(.1, walk.duration * .8));
-      }
-      const envelope = (kind: 'point' | 'react' | 'lean' | 'shrug' | 'inspect' | 'flinch' | 'nod') => {
-        const action = actions.findLast((a) => a.kind === kind);
-        if (!action) return 0;
-        const elapsed = frame - action.frame;
-        return smooth(elapsed / 4) * (1 - smooth((elapsed - action.duration * fps + 9) / 9));
-      };
-      actor.mesh.position.copy(at);
-      actor.mesh.quaternion.copy(this.camera.quaternion);
-      actor.shadow.position.copy(at).y += .012;
-      const flinch = envelope('flinch'), inspect = envelope('inspect'), shrug = envelope('shrug');
-      const breath = Math.sin(now * 5.2 + index * 1.83) * .061;
-      actor.draw({walk: stride, cycle, bob: Math.abs(Math.sin(cycle * TAU)) * stride + breath,
-        blink: (frame + index * 13) % (49 + index * 9) < 3,
-        lean: envelope('lean') + inspect * .41 - flinch * .66 + .12 * stride,
-        point: envelope('point'), shrug, inspect, flinch,
-        surprise: Math.max(envelope('react'), flinch * .88), nod: envelope('nod') * Math.sin(now * 13),
-        mood: entry.look ?? 'neutral'},
-      entry.facing === 'left' ? -1 : 1, height);
-    });
+    const lens = choreograph(this.camera, this.shot, frame, (id, at) =>
+      this.cast.position(id, at) ?? this.placements.get(id)?.position);
+    this.sky.position.copy(this.camera.position);
+    const target = this.camera.getWorldDirection(new T.Vector3()).multiplyScalar(lens.distance).add(this.camera.position);
+    this.sun.target.position.copy(target);
+    this.sun.position.copy(target).addScaledVector(this.sunDirection, 38);
+    const radius = Math.max(7.8, Math.min(23, .75 * lens.distance + 5));
+    Object.assign(this.sun.shadow.camera, {left: -radius, right: radius, top: radius, bottom: -radius});
+    this.sun.shadow.camera.updateProjectionMatrix();
+    this.cast.update(frame, this.camera, this.sunDirection, light.actorShadow);
     return lens;
   }
 
   dispose() {
     this.sun.shadow.dispose();
-    for (const {actor} of this.actors) actor.dispose();
+    this.cast.dispose();
     for (const item of [...this.materials, ...this.geometries, ...this.textures]) item.dispose();
   }
 }

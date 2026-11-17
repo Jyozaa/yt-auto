@@ -10,6 +10,8 @@ export type Shot = {
   emphasis: number;
   actions: (Beat['actions'][number] & {frame: number})[];
   sounds: (Beat['sounds'][number] & {frame: number})[];
+  cameraKeys?: (NonNullable<Beat['camera']['keys']>[number] & {frame: number})[];
+  effects?: (NonNullable<Beat['effects']>[number] & {frame: number})[];
 };
 export type Film = {story: Story; shots: Shot[]; frames: number};
 
@@ -52,7 +54,9 @@ export function compile(story: Story, alignment: Alignment): Film {
       start, end, beat, scene: story.scenes.find((scene) => scene.id === beat.scene)!,
       emphasis: beat.camera.emphasis === undefined ? -1 : at(beat.camera.emphasis),
       actions: beat.actions.map((action) => ({...action, frame: Math.max(start, at(action.word) - 1)})),
-      sounds: beat.sounds.map((sound) => ({...sound, frame: at(sound.word)}))
+      sounds: beat.sounds.map((sound) => ({...sound, frame: at(sound.word)})),
+      cameraKeys: beat.camera.keys?.map((key) => ({...key, frame: at(key.word)})),
+      effects: beat.effects?.map((effect) => ({...effect, frame: Math.max(start, at(effect.word) - 1)}))
     };
     offset += count;
     return shot;

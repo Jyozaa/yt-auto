@@ -5,6 +5,8 @@ const line = (max: number) => z.string().trim().min(1).max(max);
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const xyz = z.tuple([z.number().min(-100).max(100), z.number().min(-100).max(100), z.number().min(-100).max(100)]);
 const seconds = z.number().min(0.15).max(12);
+const expressions = ['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief',
+  'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick', 'curious', 'doubt'] as const;
 const sourceUrl = z.url({protocol: /^https$/}).max(512).refine((value) => {
   try {
     const url = new URL(value);
@@ -23,6 +25,11 @@ export const cueNames = [
 ] as const;
 export type CueKind = typeof cueNames[number];
 const placement = {id, at: xyz};
+const cameraKey = z.strictObject({
+  word: z.number().int().min(0), position: xyz, look: xyz, focus: xyz.optional(), track: id.optional(),
+  fov: z.number().min(24).max(67).optional(), roll: z.number().min(-5).max(5).optional(),
+  blur: z.number().min(0).max(18).optional(), glide: z.number().int().min(18).max(40).optional(), cut: z.boolean().optional()
+});
 const camera = z.strictObject({
   from: xyz, to: xyz, look: xyz, lookTo: xyz.optional(),
   fov: z.number().min(24).max(67),
@@ -30,14 +37,15 @@ const camera = z.strictObject({
   blur: z.number().min(0).max(18).default(0),
   motion: z.enum(['push', 'glide', 'whip']).default('push'),
   emphasis: z.number().int().min(0).optional(),
-  focusTo: xyz.optional()
+  focusTo: xyz.optional(), keys: z.array(cameraKey).min(1).max(8).optional()
 });
 const scene = z.strictObject({
   id,
   description: line(400),
   environment: z.enum(['rotunda', 'terrace', 'workshop', 'diagram', 'street', 'gallery']),
   light: z.enum(['day', 'golden']),
-  actors: z.array(z.strictObject({...placement, character: id, facing: z.enum(['left', 'right']).default('right'), look: z.enum(['neutral', 'curious', 'doubt']).optional()})).max(8),
+  actors: z.array(z.strictObject({...placement, character: id, facing: z.enum(['left', 'right']).default('right'),
+    look: z.enum(expressions).optional(), view: z.enum(['front', 'side', 'three-quarter', 'auto']).optional()})).max(8),
   props: z.array(z.strictObject({
     ...placement, kind: z.enum(['pendulum', 'swing', 'turntable', 'globe', 'bench', 'crate', 'tree', 'lamp', 'plinth', 'arch', 'gear', 'cart', 'rail', 'barrel', 'worktable', 'telescope']),
     scale: z.number().min(0.2).max(3).default(1),
@@ -47,7 +55,7 @@ const scene = z.strictObject({
 });
 const action = z.discriminatedUnion('kind', [
   z.strictObject({kind: z.literal('walk'), target: id, word: z.number().int().min(0), duration: seconds, to: xyz}),
-  z.strictObject({kind: z.enum(['point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod']), target: id, word: z.number().int().min(0), duration: seconds}),
+  z.strictObject({kind: z.enum(['point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod', 'wave', 'fall']), target: id, word: z.number().int().min(0), duration: seconds}),
   z.strictObject({kind: z.enum(['swing', 'spin', 'trace', 'roll']), target: id, word: z.number().int().min(0), duration: seconds,
     amount: z.number().min(-180).max(180)})
 ]);
@@ -61,7 +69,9 @@ const beat = z.strictObject({
   transition: z.enum(['cut', 'dissolve']).default('cut'),
   actions: z.array(action).max(16),
   sounds: z.array(z.strictObject({kind: z.enum(cueNames), word: z.number().int().min(0),
-    pan: z.number().min(-1).max(1).optional(), gain: z.number().min(.05).max(1).optional()})).max(16)
+    pan: z.number().min(-1).max(1).optional(), gain: z.number().min(.05).max(1).optional()})).max(16),
+  effects: z.array(z.strictObject({kind: z.enum(['burst', 'dust', 'splash', 'note', 'speed', 'spark', 'stars', 'stress']),
+    word: z.number().int().min(0), at: xyz, size: z.number().min(.08).max(8), duration: seconds})).max(16).optional()
 });
 const publish = z.strictObject({
   description: z.string().max(4200).optional(),
@@ -94,7 +104,11 @@ export const storySchema = z.strictObject({
   narration: line(3500),
   characters: z.array(z.strictObject({
     id, description: line(300), skin: color, hair: color, coat: color, trousers: color,
-    outfit: z.enum(['waistcoat', 'workcoat', 'dress']), height: z.number().min(1.2).max(2.1).default(1.7)
+    outfit: z.enum(['waistcoat', 'workcoat', 'dress']), height: z.number().min(1.2).max(2.1).default(1.7),
+    build: z.enum(['adult', 'stout', 'kid']).optional(),
+    hat: z.enum(['hair', 'cap', 'bonnet', 'tophat', 'shako', 'shako_tall', 'bare']).optional(),
+    boots: color.optional(), hatColor: color.optional(), moustache: color.optional(),
+    belt: color.optional(), sash: color.optional(), buttons: color.optional()
   })).max(12),
   scenes: z.array(scene).min(1).max(16),
   beats: z.array(beat).min(7).max(18),
@@ -140,13 +154,22 @@ export const storySchema = z.strictObject({
     const place = story.scenes.find((candidate) => candidate.id === entry.scene);
     if (!place) issue(path, 'Unknown scene');
     const count = wordsOf(entry.text).length;
-    const indices = [...entry.actions.map((a) => a.word), ...entry.sounds.map((s) => s.word), entry.camera.emphasis ?? 0];
+    const keys = entry.camera.keys ?? [];
+    const indices = [...entry.actions.map((a) => a.word), ...entry.sounds.map((s) => s.word), entry.camera.emphasis ?? 0,
+      ...keys.map((key) => key.word), ...(entry.effects ?? []).map((effect) => effect.word)];
     if (!count || indices.some((index) => index >= count)) issue(path, 'Cue word index outside beat');
     if (Math.hypot(...entry.camera.from.map((v, j) => v - entry.camera.to[j])) < 0.035) issue(path, 'Camera must move during the shot');
     if (([entry.camera.from, entry.camera.to] as const).some((position, j) => {
       const look = j ? entry.camera.lookTo ?? entry.camera.look : entry.camera.look;
       return Math.hypot(...position.map((v, axis) => v - look[axis])) < 0.3;
     })) issue(path, 'Camera requires separation from its look target');
+    for (const [keyIndex, key] of keys.entries()) {
+      if (keyIndex && key.word <= keys[keyIndex - 1].word) issue(path, 'Camera keys must use strictly increasing word offsets');
+      const subject = key.track && [...(place?.actors ?? []), ...(place?.props ?? [])].find(({id}) => id === key.track);
+      if (key.track && !subject) issue(path, 'Camera tracks an unknown scene placement');
+      const look = key.look.map((v, axis) => v + (subject ? subject.at[axis] : 0));
+      if (Math.hypot(...key.position.map((v, axis) => v - look[axis])) < .3) issue(path, 'Camera key requires separation from its look target');
+    }
     for (const a of entry.actions) {
       const prop = place?.props.find((p) => p.id === a.target);
       const actor = place?.actors.some((p) => p.id === a.target);
@@ -154,7 +177,7 @@ export const storySchema = z.strictObject({
           (a.kind === 'trace' && prop?.kind !== 'pendulum') ||
           (a.kind === 'spin' && !['globe', 'turntable', 'gear'].includes(prop?.kind ?? '')) ||
           (a.kind === 'roll' && prop?.kind !== 'cart') ||
-          (['walk', 'point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod'].includes(a.kind) && !actor)) {
+          (['walk', 'point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod', 'wave', 'fall'].includes(a.kind) && !actor)) {
         issue(path, `Unsupported action target ${a.target} for ${a.kind}`);
       }
       if (a.kind === 'swing' && Math.abs(a.amount) > 27) issue(path, 'Swing amplitude cannot exceed 27 degrees');

@@ -14,7 +14,7 @@ The [model manifest](../config/voice-models.json) pins the release and SHA-256 d
 
 `TTS_PROVIDER=elevenlabs` uses its character timestamps and groups them into words. `TTS_PROVIDER=espeak` is an explicit developer fallback that uses synthesizer events. An external recording can use `TTS_PROVIDER=file` with `VOICE_FILE` and `WORDS_FILE`. Its timing JSON has `provider`, `duration`, and a `words` array of `{word, start, end}` objects in seconds.
 
-Scene boundaries follow the first aligned word of each beat. The compiler schedules acting cues one frame early where the shot boundary permits. SFX use the nearest frame. On a dissolve, the outgoing pose holds for seven frames while the incoming scene animates. Camera movement uses a continuous push, smootherstep glide, or word-triggered whip. Impact cues add a seven-frame decaying roll.
+Scene boundaries follow the first aligned word of each beat. The compiler schedules acting and illustrated effect cues one frame early where the shot boundary permits. SFX use the nearest frame. On a dissolve, the outgoing pose holds for seven frames while the incoming scene animates. `camera.keys` adds ordered word-indexed changes in position, framing, field of view, roll, focus and blur. Keys use source smootherstep over 18–40 frames, defaulting to 24. `cut: true` switches framing at the key. Key positions are absolute metres. With `track`, the key’s `look` and optional `focus` become offsets from the named actor or prop. Impact sounds add a seven-frame decaying roll.
 
 ## Scene vocabulary
 
@@ -23,14 +23,16 @@ Scene boundaries follow the first aligned word of each beat. The compiler schedu
 | Environments | `rotunda`, `terrace`, `workshop`, `diagram`, `street`, `gallery` |
 | Lighting | `day`, `golden` |
 | Props | `pendulum`, `swing`, `turntable`, `globe`, `bench`, `crate`, `tree`, `lamp`, `plinth`, `arch`, `gear`, `cart`, `rail`, `barrel`, `worktable`, `telescope` |
-| Wardrobe | `waistcoat`, `workcoat`, `dress`, with configurable colours and height |
-| Actor actions | `walk`, `point`, `lean`, `react`, `shrug`, `inspect`, `flinch`, `nod` |
+| Wardrobe | `waistcoat`, `workcoat`, `dress`, optional `adult`, `stout`, `kid` build and `hair`, `cap`, `bonnet`, `tophat`, `shako`, `shako_tall`, `bare` headwear |
+| Views | `front`, `side`, `three-quarter`, `auto` per actor |
+| Actor actions | `walk`, `point`, `lean`, `react`, `shrug`, `inspect`, `flinch`, `nod`, `wave`, `fall` |
 | Prop actions | `swing` for pendulum or swing, `trace` for pendulum, `spin` for globe, turntable or gear, `roll` for cart |
+| Illustrated effects | `burst`, `dust`, `splash`, `note`, `speed`, `spark`, `stars`, `stress` |
 | Sounds | `step`, `step-wood`, `step-stone`, `step-earth`, `impact`, `wood-hit`, `metal-hit`, `stone-hit`, `whoosh`, `chime`, `scrape`, `door`, `machine`, `creak`, `snap`, `splash`, `wind`, `reaction` |
 
 Positions are metres in a right-handed Three.js world. Y is up. Start at ground Y = 0 and compose most shots looking toward negative Z. Terrace flooring is raised by 0.19 m. Place actors and props on their supporting surfaces. `camera.from` and `camera.to` are lens positions. `camera.look` and optional `lookTo` are view targets. `focusTo` shifts lens focus independently. Keep actor feet out of the apparatus and inspect the start, middle, and end of a moving shot.
 
-World assemblies and textures are procedural. The renderer uses camera-facing Canvas2D actors with lit cutout materials and ground contact shadows. The pass order is world render, normal/depth ink, two depth-aware lens passes, HDR bloom, Neutral tone map, then display grade. Character cards carry their own outlines and skip the world ink pass. Animation is a direct function of the frame index.
+The street and terrace use the upstream batched gabled houses, raised facade trim, planted foreground and HD paint. The source 600 × 1000 character drawings use lit, yaw-only cards, reused canvas textures, source stance/swing phases and multiply contact shadows. Actor `look` accepts the original expression library listed in `src/story/schema.ts`. Optional character fields include `boots`, `hatColor`, `moustache`, `belt`, `sash` and `buttons`. A shot-fixed camera-relative sun drives both the world and the cast. The pass order is world render, normal/depth ink, two depth-aware lens passes, HDR bloom, Neutral tone map, then display grade. Character and effect cards carry their own outlines and skip the world ink pass. Animation is a direct function of the frame index.
 
 The library handles the catalog above. Descriptions explain staging to a human or verifier. Rendering consumes the structured placements and actions. Add a geometry builder and schema entry for a new unsupported prop or setting.
 

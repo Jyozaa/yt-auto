@@ -92,7 +92,8 @@ export async function inspectVideo(args: {
     if (shotIndex + 1 < film.shots.length && frame >= film.shots[shotIndex + 1].start) shotIndex++;
     const shot = film.shots[shotIndex];
     const transition = Math.min(frame - shot.start, shot.end - frame) < 3 ||
-      (shot.beat.transition === 'dissolve' && frame - shot.start < 9);
+      (shot.beat.transition === 'dissolve' && frame - shot.start < 9) ||
+      (shot.cameraKeys ?? []).some((key) => key.cut && Math.abs(frame - key.frame) <= 1);
     let brightness = 0, dark = 0, highlights = 0, chroma = 0, edges = 0;
     for (let i = 0; i < pixels.length; i += 3) {
       const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];

@@ -91,7 +91,10 @@
       "coat": "#408785",
       "trousers": "#4a4148",
       "outfit": "dress",
-      "height": 1.65
+      "height": 1.65,
+      "hat": "bonnet",
+      "hatColor": "#574148",
+      "boots": "#3c2a31"
     },
     {
       "id": "leon",
@@ -101,7 +104,10 @@
       "coat": "#a35043",
       "trousers": "#54434c",
       "outfit": "waistcoat",
-      "height": 1.78
+      "height": 1.78,
+      "moustache": "#4b3028",
+      "boots": "#352831",
+      "buttons": "#d4b277"
     },
     {
       "id": "visitor-ochre",
@@ -111,7 +117,11 @@
       "coat": "#b18446",
       "trousers": "#413646",
       "outfit": "waistcoat",
-      "height": 1.68
+      "height": 1.68,
+      "build": "stout",
+      "hat": "tophat",
+      "hatColor": "#39282b",
+      "moustache": "#3f2d26"
     },
     {
       "id": "visitor-blue",
@@ -121,7 +131,9 @@
       "coat": "#5369a1",
       "trousers": "#544650",
       "outfit": "dress",
-      "height": 1.58
+      "height": 1.58,
+      "hat": "bonnet",
+      "hatColor": "#756692"
     }
   ],
   "scenes": [
@@ -140,7 +152,8 @@
             -1.85
           ],
           "facing": "right",
-          "look": "curious"
+          "look": "curious",
+          "view": "three-quarter"
         }
       ],
       "props": [
@@ -199,7 +212,8 @@
             0,
             2.28
           ],
-          "facing": "right"
+          "facing": "right",
+          "view": "three-quarter"
         },
         {
           "id": "physicist",
@@ -209,7 +223,8 @@
             0,
             -1.98
           ],
-          "facing": "left"
+          "facing": "left",
+          "view": "front"
         }
       ],
       "props": [
@@ -257,7 +272,8 @@
             0,
             -0.1
           ],
-          "facing": "right"
+          "facing": "right",
+          "view": "three-quarter"
         }
       ],
       "props": [
@@ -373,7 +389,8 @@
             0,
             -1.86
           ],
-          "facing": "right"
+          "facing": "right",
+          "view": "three-quarter"
         },
         {
           "id": "physicist",
@@ -383,18 +400,20 @@
             0,
             -1.84
           ],
-          "facing": "left"
+          "facing": "left",
+          "view": "three-quarter"
         },
         {
           "id": "crowd-1",
-          "character": "leon",
+          "character": "visitor-ochre",
           "at": [
             -2.4,
             0,
             -1.9
           ],
           "facing": "right",
-          "look": "curious"
+          "look": "nervous",
+          "view": "front"
         },
         {
           "id": "crowd-2",
@@ -405,7 +424,8 @@
             -2.7
           ],
           "facing": "left",
-          "look": "curious"
+          "look": "grin",
+          "view": "side"
         },
         {
           "id": "crowd-3",
@@ -416,18 +436,20 @@
             -3.1
           ],
           "facing": "right",
-          "look": "curious"
+          "look": "smile_closed",
+          "view": "three-quarter"
         },
         {
           "id": "crowd-4",
-          "character": "celeste",
+          "character": "visitor-blue",
           "at": [
             0.54,
             0,
             -3.2
           ],
           "facing": "left",
-          "look": "curious"
+          "look": "relief",
+          "view": "front"
         }
       ],
       "props": [
@@ -476,7 +498,8 @@
             0.95
           ],
           "facing": "right",
-          "look": "curious"
+          "look": "curious",
+          "view": "auto"
         },
         {
           "id": "guide",
@@ -487,7 +510,8 @@
             -0.54
           ],
           "facing": "left",
-          "look": "neutral"
+          "look": "neutral",
+          "view": "front"
         }
       ],
       "props": [
@@ -495,11 +519,12 @@
           "id": "arch",
           "kind": "arch",
           "at": [
+            -3.0,
             0,
-            0,
-            -2.66
+            -4.6
           ],
-          "scale": 1.05
+          "scale": 0.92,
+          "yaw": -12
         },
         {
           "id": "cart",
@@ -520,6 +545,16 @@
             0,
             -0.75
           ]
+        },
+        {
+          "id": "near-tree",
+          "kind": "tree",
+          "at": [
+            -3.4,
+            0,
+            2.4
+          ],
+          "scale": 0.8
         }
       ]
     },
@@ -538,7 +573,8 @@
             -1.9
           ],
           "facing": "right",
-          "look": "doubt"
+          "look": "stern",
+          "view": "side"
         }
       ],
       "props": [
@@ -573,27 +609,51 @@
         "mechanism"
       ],
       "scene": "opening",
-      "visual": "The bob cuts across the near foreground. A visitor recoils as it passes.",
+      "visual": "The brass ball crosses the foreground. The camera glides in on the visitor as she follows its swing.",
       "camera": {
         "from": [
-          0.8,
-          1.85,
-          5.75
+          0.94,
+          1.5,
+          5.48
         ],
         "to": [
-          0.36,
-          1.53,
-          5.12
+          0.43,
+          1.43,
+          4.94
         ],
         "look": [
-          -0.6,
-          0.91,
-          -0.25
+          -0.55,
+          0.97,
+          -0.48
         ],
-        "fov": 49,
+        "fov": 45,
         "blur": 11,
         "motion": "push",
-        "emphasis": 1
+        "emphasis": 1,
+        "keys": [
+          {
+            "word": 5,
+            "position": [
+            -2.85,
+            1.64,
+            0.1
+            ],
+            "look": [
+              0,
+              1.32,
+              0
+            ],
+            "track": "visitor",
+            "focus": [
+              0,
+              1.47,
+              0
+            ],
+          "fov": 43,
+            "blur": 14,
+            "glide": 25
+          }
+        ]
       },
       "actions": [
         {
@@ -627,27 +687,68 @@
         "installation"
       ],
       "scene": "street",
-      "visual": "Glide past a cart toward the arch as a visitor crosses the paving to meet Foucault.",
+      "visual": "A low street establishing shot glides alongside the walking visitor, then shifts to the guide’s face and pointing hand.",
       "camera": {
         "from": [
-          0.98,
-          2.13,
-          6.44
+          2.3,
+          2.35,
+          8.8
         ],
         "to": [
-          0.02,
-          1.76,
-          5.15
+          1.9,
+          2.22,
+          8.1
         ],
         "look": [
-          -0.06,
-          1.48,
-          -0.53
+          0.15,
+          2.17,
+          -2
         ],
         "fov": 49,
         "roll": 1,
-        "blur": 9,
-        "motion": "glide"
+        "blur": 0,
+        "motion": "glide",
+        "keys": [
+          {
+            "word": 5,
+            "position": [
+              1.7,
+              1.55,
+              4.0
+            ],
+            "look": [
+              0.62,
+              0.93,
+              -0.64
+            ],
+            "track": "visitor",
+            "focus": [
+              0.28,
+              1.26,
+              -0.3
+            ],
+            "fov": 41,
+            "blur": 10,
+            "glide": 31
+          },
+          {
+            "word": 14,
+            "position": [
+              0.78,
+              1.57,
+              2.6
+            ],
+            "look": [
+              0,
+              1.47,
+              0
+            ],
+            "track": "guide",
+            "fov": 42,
+            "blur": 12,
+            "glide": 26
+          }
+        ]
       },
       "actions": [
         {
@@ -682,7 +783,20 @@
           "gain": 0.25
         }
       ],
-      "transition": "dissolve"
+      "transition": "dissolve",
+      "effects": [
+        {
+          "kind": "dust",
+          "word": 7,
+          "at": [
+            -0.47,
+            0.16,
+            -0.21
+          ],
+          "size": 0.4,
+          "duration": 0.44
+        }
+      ]
     },
     {
       "role": "escalation",
@@ -715,6 +829,24 @@
           0,
           2,
           -0.2
+        ],
+        "keys": [
+          {
+            "word": 14,
+            "position": [
+              1.3,
+              2.05,
+              5.6
+            ],
+            "look": [
+              0,
+              1.19,
+              0
+            ],
+            "fov": 39,
+            "blur": 8,
+            "glide": 32
+          }
         ]
       },
       "actions": [
@@ -748,27 +880,46 @@
         "traces"
       ],
       "scene": "scratch",
-      "visual": "Track low along the cut in the sand. A visitor peers in at the nearly unchanged trace.",
+      "visual": "The pointer cuts the sand in a low insert. The camera moves up to the waiting visitor’s deadpan profile.",
       "camera": {
         "from": [
-          1.92,
-          1.23,
-          4.72
+          1.64,
+          1.19,
+          3.96
         ],
         "to": [
           1.22,
-          1.19,
-          3.66
+          1.16,
+          3.57
         ],
         "look": [
-          0.08,
-          0.54,
-          0.03
+          0.12,
+          0.43,
+          0.1
         ],
-        "fov": 47,
+        "fov": 41,
         "roll": -2,
-        "blur": 13,
-        "motion": "glide"
+        "blur": 9,
+        "motion": "glide",
+        "keys": [
+          {
+            "word": 20,
+            "position": [
+              -1.44,
+              1.56,
+              1.72
+            ],
+            "look": [
+              0,
+              1.36,
+              0
+            ],
+            "track": "visitor",
+            "fov": 36,
+            "blur": 13,
+            "glide": 23
+          }
+        ]
       },
       "actions": [
         {
@@ -799,7 +950,20 @@
           "gain": 0.6
         }
       ],
-      "transition": "cut"
+      "transition": "cut",
+      "effects": [
+        {
+          "kind": "dust",
+          "word": 9,
+          "at": [
+            0.06,
+            0.3,
+            0.04
+          ],
+          "size": 0.28,
+          "duration": 0.34
+        }
+      ]
     },
     {
       "role": "escalation",
@@ -861,7 +1025,7 @@
         "mechanism"
       ],
       "scene": "model",
-      "visual": "The visitor shrugs. On the reveal, the camera tilts toward the model floor as its stripe turns.",
+      "visual": "The visitor shrugs in close-up. The camera tilts down to the stripe turning on the model floor.",
       "camera": {
         "from": [
           -0.3,
@@ -887,7 +1051,47 @@
         "blur": 8,
         "motion": "whip",
         "emphasis": 16,
-        "roll": 4
+        "roll": 4,
+        "keys": [
+          {
+            "word": 3,
+            "position": [
+              -0.85,
+              1.52,
+              2.72
+            ],
+            "look": [
+              0,
+              1.33,
+              0
+            ],
+            "track": "visitor",
+            "fov": 36,
+            "blur": 12,
+            "glide": 22
+          },
+          {
+            "word": 16,
+            "position": [
+              0.49,
+              2.74,
+              4.28
+            ],
+            "look": [
+              0.52,
+              1.0,
+              -0.17
+            ],
+            "focus": [
+              0.72,
+              1.13,
+              -0.13
+            ],
+            "fov": 49,
+            "blur": 7,
+            "glide": 24
+          }
+        ]
       },
       "actions": [
         {
@@ -942,7 +1146,25 @@
         ],
         "fov": 53,
         "blur": 0,
-        "motion": "glide"
+        "motion": "glide",
+        "keys": [
+          {
+            "word": 20,
+            "position": [
+              3.2,
+              3.9,
+              4.2
+            ],
+            "look": [
+              0,
+              1.22,
+              0
+            ],
+            "fov": 50,
+            "blur": 0,
+            "glide": 35
+          }
+        ]
       },
       "actions": [
         {
@@ -1032,7 +1254,7 @@
         "demonstration"
       ],
       "scene": "closing",
-      "visual": "Return to the crowd around the apparatus. A visitor looks down as the final mark appears in the sand.",
+      "visual": "The camera catches the visitor’s reaction, then returns to the marks growing under everyone’s feet.",
       "camera": {
         "from": [
           1.06,
@@ -1056,6 +1278,46 @@
           0,
           0.44,
           0
+        ],
+        "keys": [
+          {
+            "word": 6,
+            "position": [
+              -1.05,
+              1.54,
+              1.96
+            ],
+            "look": [
+              0,
+              1.24,
+              0
+            ],
+            "track": "visitor",
+            "focus": [
+              0,
+              1.4,
+              0
+            ],
+            "fov": 36,
+            "blur": 13,
+            "glide": 25
+          },
+          {
+            "word": 13,
+            "position": [
+              -0.24,
+              2.26,
+              3.92
+            ],
+            "look": [
+              0,
+              0.37,
+              0.03
+            ],
+            "fov": 47,
+            "blur": 7,
+            "glide": 21
+          }
         ]
       },
       "actions": [
