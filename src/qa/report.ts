@@ -40,6 +40,23 @@ async function silenceSpans(path: string, seconds: number) {
     ({end: Number(match[1]), seconds: Number(match[2])}));
 }
 
+async function voiceClicks(voice: string, seconds: number) {
+  const {stdout} = await ffmpeg(['-v', 'error', '-i', voice, '-t', String(seconds), '-ar', '48000', '-ac', '1', '-f', 'f32le', '-']);
+  const audio = new DataView(stdout.buffer, stdout.byteOffset, stdout.byteLength);
+  const findings = [];
+  let previous = 0, previousStep = 0;
+  for (let i = 4; i + 4 < audio.byteLength; i += 4) {
+    const current = audio.getFloat32(i, true);
+    const step = Math.abs(current - previous);
+    const nextStep = Math.abs(audio.getFloat32(i + 4, true) - current);
+    if (step > .46 && previousStep < .09 && nextStep < .09) findings.push(i / 4 / 48000);
+    previous = current;
+    previousStep = step;
+    if (findings.length >= 20) break;
+  }
+  return findings;
+}
+
 export async function inspectVideo(args: {
   video: string; dir: string; film: Film; frames: number; width: number; height: number; voice?: string; semantic?: boolean;
 }) {
@@ -66,6 +83,7 @@ export async function inspectVideo(args: {
   if (count !== frames) failures.push({kind: 'frame-count', message: `Expected ${frames} frames, decoded ${count}`});
   const sample = (n: number) => raw.subarray(n * bytesPerFrame, (n + 1) * bytesPerFrame);
   let frozen = 0;
+  let exposed = 0;
   const metrics = [];
   const images = [];
   let shotIndex = 0;
@@ -95,6 +113,9 @@ export async function inspectVideo(args: {
     if (!transition && highlights / pixelCount > .985 && !failures.some((f) => f.kind === 'white' && f.shot === shotIndex)) {
       failures.push({kind: 'white', frame, shot: shotIndex, repairable: true, message: 'Nearly all pixels are white outside a transition'});
     }
+    exposed = !transition && (brightness / pixelCount < .079 || brightness / pixelCount > .935) ? exposed + 1 : 0;
+    if (exposed === 12) failures.push({kind: 'exposure', frame: frame - 11, shot: shotIndex, repairable: true,
+      message: 'Frame exposure stayed outside the safe range for 12 frames'});
     frozen = !transition && motion < .095 ? frozen + 1 : 0;
     if (frozen === 18 && !failures.some((f) => f.kind === 'freeze' && f.shot === shotIndex)) {
       failures.push({kind: 'freeze', frame: frame - 17, shot: shotIndex, message: 'Picture barely moved for at least 18 frames'});
@@ -108,6 +129,17 @@ export async function inspectVideo(args: {
   for (const [index, shot] of film.shots.entries()) {
     const end = Math.min(shot.end, count);
     if (end <= shot.start) break;
+    if (index > 0 && end > shot.start + 8 && shot.beat.transition === 'dissolve') {
+      const start = shot.start;
+      const outgoing = sample(start - 1), incoming = sample(start + 7);
+      const contrast = distance(outgoing, incoming);
+      const blended = [2, 3, 4, 5].some((offset) => {
+        const middle = sample(start + offset);
+        return distance(outgoing, middle) < contrast * .93 && distance(incoming, middle) < contrast * .93;
+      });
+      if (contrast > 13 && !blended) failures.push({kind: 'transition', frame: start, shot: index,
+        message: 'Planned dissolve has no blended intermediate frame'});
+    }
     const length = end - shot.start;
     const values = [.20, .50, .80].map((fraction) => Math.min(end - 1, shot.start + Math.floor(length * fraction)));
     const stills = [];
@@ -128,19 +160,35 @@ export async function inspectVideo(args: {
     `fps=${Math.min(24, count)}/${count / fps},scale=144:256:flags=area,tile=6x4:padding=4:margin=4:color=0x242437`,
     '-frames:v', '1', '-q:v', '3', '-update', '1', join(dir, 'contact-sheet.jpg')]);
   const levels = track && await loudness(video);
-  const voiceSilences = voice ? await silenceSpans(voice, frames / fps) : [];
+  const [voiceSilences, clicks] = voice ? await Promise.all([
+    silenceSpans(voice, frames / fps), voiceClicks(voice, frames / fps)
+  ]) : [[], []];
+  if (clicks.length) failures.push({kind: 'voice-pop', message: 'Isolated abrupt sample steps in narration'});
   if (levels && (levels.lufs === null || levels.lufs < -16 || levels.lufs > -13 ||
     levels.truePeak === null || levels.truePeak > -1 || levels.silences.length)) {
     failures.push({kind: 'levels', message: 'Mix loudness, true peak or silence is outside acceptance bounds'});
   }
   if (voiceSilences.length) failures.push({kind: 'speech', message: 'Narration has an unexpected silent span of 0.95 seconds or longer'});
-  const vision = semantic ? await reviewShots(film, images) : [];
+  let semanticError: string | undefined;
+  const vision = semantic ? await reviewShots(film, images).catch((error: unknown) => {
+    semanticError = error instanceof Error ? error.message : String(error);
+    failures.push({kind: 'vision-provider', message: 'Configured visual review failed. See semanticError in report.json.'});
+    return [];
+  }) : [];
   for (const review of vision.filter((entry) => entry.severity === 'block')) {
     failures.push({kind: `vision-${review.role}`, shot: review.shot, message: review.findings.join(' / '),
       repairable: review.repair === 'soften-look' && ['post', 'lighting'].includes(review.role)});
   }
-  const report = {passed: failures.length === 0, expected: {frames, width, height, fps}, metadata, levels, voiceSilences,
-    panels, failures, roles, vision, semanticReview: vision.length > 0 ? 'provider' : 'manual'};
+  const fixes = [
+    ...failures.map(({kind, shot, frame, message, repairable}) => ({kind, shot, frame, message, action: repairable ? 'Soften selected shot and recheck' : 'Revise and render again'})),
+    ...vision.filter(({severity}) => severity !== 'pass').map((entry) => ({
+      kind: entry.role, shot: entry.shot, message: entry.findings.join(' / '),
+      action: entry.fix ?? (entry.repair === 'soften-look' ? 'Reduce blur and grade strength' : 'Review this shot manually')
+    }))
+  ];
+  const report = {passed: failures.length === 0, expected: {frames, width, height, fps}, metadata, levels, voiceSilences, clicks,
+    panels, failures, fixes, roles, vision,
+    semanticError, semanticReview: !semantic ? 'skipped' : semanticError ? 'error' : vision.length > 0 ? 'provider' : 'unavailable'};
   await writeFile(join(dir, 'report.json'), JSON.stringify(report, null, 2));
   await writeFile(join(dir, 'frames.json'), JSON.stringify(metrics));
   await writeFile(join(dir, 'report.md'), [
@@ -148,9 +196,10 @@ export async function inspectVideo(args: {
     `Decoded ${count} frames at ${picture?.width} × ${picture?.height}.`,
     `Mix ${levels ? `${levels.lufs} LUFS and ${levels.truePeak} dBTP` : 'missing'}.`, '',
     '## Findings', '', ...(failures.length ? failures.map((f) => `- ${f.message}${f.frame === undefined ? '' : ` (frame ${f.frame})`}`) : ['- Automated checks passed.']),
+    '', '## Fix list', '', ...(fixes.length ? fixes.map((fix) => `- ${fix.message} — ${fix.action}`) : ['- No technical fixes flagged.']),
     '', '## Visual review', '',
     ...(vision.length ? vision.flatMap((review) => [`- Shot ${review.shot + 1}, ${review.role} — ${review.severity}. ${review.findings.join(' ')}`]) :
-      ['The contact sheet and shot stills are available for artistic and narrative inspection.']),
+      [`Semantic vision review: ${report.semanticReview}. Inspect the contact sheet and shot stills for artistic quality.`]),
     '', 'See report.json for per-shot measurements and frames.json for frame statistics.'
   ].join('\n') + '\n');
   return report;

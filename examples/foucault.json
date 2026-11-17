@@ -1,26 +1,29 @@
 {
-  "version": 1,
+  "version": 2,
   "id": "foucault-floor",
   "title": "The floor that moved",
   "youtubeTitle": "The Pendulum That Caught the Earth Turning",
   "topic": "science",
   "summary": "A pendulum in the Paris Panthéon reveals Earth’s rotation by marking its swing on the floor.",
-  "duration": 60,
+  "duration": 61,
   "sources": [
     {
       "id": "pantheon",
       "title": "Centre des monuments nationaux, Foucault’s pendulum",
-      "url": "https://www.paris-pantheon.fr/en/discover/foucault-s-pendulum"
-    },
-    {
-      "id": "smithsonian",
-      "title": "Smithsonian Institution, Foucault Pendulum",
-      "url": "https://www.si.edu/spotlight/foucault-pendulum"
+      "url": "https://www.paris-pantheon.fr/en/discover/foucault-s-pendulum",
+      "kind": "institutional"
     },
     {
       "id": "academy",
       "title": "Comptes Rendus Physique, Foucault and the rotation of the Earth",
-      "url": "https://doi.org/10.1016/j.crhy.2017.11.003"
+      "url": "https://comptes-rendus.academie-sciences.fr/physique/item/10.1016/j.crhy.2017.11.003.pdf",
+      "kind": "secondary"
+    },
+    {
+      "id": "memoir",
+      "title": "Léon Foucault, 1851 report to the Académie des sciences",
+      "url": "https://zenodo.org/records/2429355",
+      "kind": "primary"
     }
   ],
   "claims": [
@@ -46,7 +49,7 @@
       "id": "mechanism",
       "text": "The oscillation plane shifts relative to the building because the Earth rotates beneath the pendulum.",
       "sources": [
-        "smithsonian",
+        "memoir",
         "academy"
       ],
       "risk": "ordinary"
@@ -55,13 +58,30 @@
       "id": "latitude",
       "text": "The oscillation plane shifts through one full rotation relative to the ground in approximately one day at the North Pole, more slowly at Paris, and not at all at the equator.",
       "sources": [
-        "smithsonian",
+        "memoir",
         "academy"
       ],
       "risk": "ordinary"
+    },
+    {
+      "id": "invitation",
+      "text": "Invitations for the 1851 demonstration invited people to see Earth turn.",
+      "risk": "ordinary",
+      "sources": [
+        "pantheon"
+      ]
+    },
+    {
+      "id": "demonstration",
+      "text": "The experiment made the rotation of Earth visible indoors and attracted a crowd of Parisians.",
+      "risk": "ordinary",
+      "sources": [
+        "pantheon",
+        "memoir"
+      ]
     }
   ],
-  "narration": "A swinging ball made an entire building seem to turn, without moving a single stone. In eighteen fifty one, Leon Foucault hangs a brass and lead ball from the dome of the Pantheon in Paris. Its steel wire measures sixty seven metres, and the ball weighs twenty eight kilograms. As the ball swings, a pointer underneath leaves a line in sand. Watch long enough and the next line sits at an angle to the first. The marks slowly spread across the floor. One pass is easy to miss. The sand keeps a record, so you can compare the newer lines with the older ones. So is the ball changing direction, or is the floor turning underneath it? The answer depends on where you stand. Picture a toy swing above a spinning turntable. The seat keeps swinging past the same point on the wall while the stripes on the turntable slide underneath. From the turntable, it looks like the swing is turning. At the North Pole the floor turns all the way around in about a day. In Paris the change is slower. At the equator that shift disappears completely. Come to see a ball swing and you could miss the show. The thing to watch was the floor under your own feet.",
+  "narration": "One swinging ball made an entire building look like it was turning. It's 1851 in Paris. Léon Foucault invites people to see Earth turn. Inside, the stone building feels perfectly still. From the dome of the Panthéon, he hangs a brass and lead ball on a steel wire. It's 67 metres long. The ball weighs 28 kilograms. A pointer under the ball cuts a line in sand. On the next pass, that line looks almost identical. That's a terrible show if you leave early. But give the sand time. Each pass adds another line, slightly tilted from the last, until the marks spread into a fan. Something is turning. So did the ball turn, or did the whole building turn beneath it? The floor is moving under everyone the whole time. You see, picture a swing over a spinning turntable. The seat keeps going past the same spot on the wall. But the marks underneath slide sideways. Stand on the turntable and it looks like the swing changes direction. At the North Pole, the floor makes one full turn in about a day. In Paris the shift is slower. At the equator, it disappears. People came to see Earth turn. The best part of the show was under their feet.",
   "characters": [
     {
       "id": "celeste",
@@ -82,6 +102,26 @@
       "trousers": "#54434c",
       "outfit": "waistcoat",
       "height": 1.78
+    },
+    {
+      "id": "visitor-ochre",
+      "description": "An invented visitor in an ochre walking coat.",
+      "skin": "#c78964",
+      "hair": "#39282b",
+      "coat": "#b18446",
+      "trousers": "#413646",
+      "outfit": "waistcoat",
+      "height": 1.68
+    },
+    {
+      "id": "visitor-blue",
+      "description": "An invented visitor in a blue dress.",
+      "skin": "#f4cfad",
+      "hair": "#593b32",
+      "coat": "#5369a1",
+      "trousers": "#544650",
+      "outfit": "dress",
+      "height": 1.58
     }
   ],
   "scenes": [
@@ -99,7 +139,8 @@
             0,
             -1.85
           ],
-          "facing": "right"
+          "facing": "right",
+          "look": "curious"
         }
       ],
       "props": [
@@ -130,6 +171,17 @@
             0,
             -1.58
           ]
+        },
+        {
+          "id": "foreground-rail",
+          "kind": "rail",
+          "at": [
+            1.95,
+            0,
+            2.42
+          ],
+          "yaw": -23,
+          "scale": 0.7
         }
       ]
     },
@@ -246,6 +298,17 @@
             0,
             -0.85
           ]
+        },
+        {
+          "id": "gear",
+          "kind": "gear",
+          "at": [
+            1.74,
+            0.1,
+            -1.95
+          ],
+          "yaw": 0,
+          "scale": 0.69
         }
       ]
     },
@@ -298,9 +361,9 @@
     },
     {
       "id": "closing",
-      "environment": "rotunda",
+      "environment": "gallery",
       "light": "golden",
-      "description": "Return to the dial with the warm light of a later hour.",
+      "description": "The visitors crowd around the instrument as the warm light catches the traces at their feet.",
       "actors": [
         {
           "id": "visitor",
@@ -321,6 +384,50 @@
             -1.84
           ],
           "facing": "left"
+        },
+        {
+          "id": "crowd-1",
+          "character": "leon",
+          "at": [
+            -2.4,
+            0,
+            -1.9
+          ],
+          "facing": "right",
+          "look": "curious"
+        },
+        {
+          "id": "crowd-2",
+          "character": "visitor-ochre",
+          "at": [
+            1.15,
+            0,
+            -2.7
+          ],
+          "facing": "left",
+          "look": "curious"
+        },
+        {
+          "id": "crowd-3",
+          "character": "visitor-blue",
+          "at": [
+            -0.1,
+            0,
+            -3.1
+          ],
+          "facing": "right",
+          "look": "curious"
+        },
+        {
+          "id": "crowd-4",
+          "character": "celeste",
+          "at": [
+            0.54,
+            0,
+            -3.2
+          ],
+          "facing": "left",
+          "look": "curious"
         }
       ],
       "props": [
@@ -353,16 +460,120 @@
           ]
         }
       ]
+    },
+    {
+      "id": "street",
+      "environment": "street",
+      "light": "day",
+      "description": "Visitors cross a Paris street toward a stylised stone entrance.",
+      "actors": [
+        {
+          "id": "visitor",
+          "character": "celeste",
+          "at": [
+            -0.86,
+            0,
+            0.95
+          ],
+          "facing": "right",
+          "look": "curious"
+        },
+        {
+          "id": "guide",
+          "character": "leon",
+          "at": [
+            0.96,
+            0,
+            -0.54
+          ],
+          "facing": "left",
+          "look": "neutral"
+        }
+      ],
+      "props": [
+        {
+          "id": "arch",
+          "kind": "arch",
+          "at": [
+            0,
+            0,
+            -2.66
+          ],
+          "scale": 1.05
+        },
+        {
+          "id": "cart",
+          "kind": "cart",
+          "at": [
+            2.05,
+            0,
+            0.12
+          ],
+          "yaw": 25,
+          "scale": 0.84
+        },
+        {
+          "id": "barrel",
+          "kind": "barrel",
+          "at": [
+            -1.98,
+            0,
+            -0.75
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scratch",
+      "environment": "rotunda",
+      "light": "day",
+      "description": "The brass stylus passes just over a sand dial with a single trace.",
+      "actors": [
+        {
+          "id": "visitor",
+          "character": "celeste",
+          "at": [
+            -1.61,
+            0,
+            -1.9
+          ],
+          "facing": "right",
+          "look": "doubt"
+        }
+      ],
+      "props": [
+        {
+          "id": "bob",
+          "kind": "pendulum",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "rail",
+          "kind": "rail",
+          "at": [
+            2.33,
+            0,
+            -1
+          ],
+          "yaw": -24,
+          "scale": 0.6
+        }
+      ]
     }
   ],
   "beats": [
     {
       "role": "hook",
-      "text": "A swinging ball made an entire building seem to turn, without moving a single stone.",
+      "text": "One swinging ball made an entire building look like it was turning.",
       "claims": [
         "mechanism"
       ],
       "scene": "opening",
+      "visual": "The bob cuts across the near foreground. A visitor recoils as it passes.",
       "camera": {
         "from": [
           0.8,
@@ -382,38 +593,105 @@
         "fov": 49,
         "blur": 11,
         "motion": "push",
-        "emphasis": 9
+        "emphasis": 1
       },
-      "transition": "cut",
       "actions": [
         {
           "kind": "swing",
           "target": "bob",
           "word": 1,
-          "duration": 4,
-          "amount": 9
+          "duration": 2.8,
+          "amount": 11
         },
         {
-          "kind": "react",
+          "kind": "flinch",
           "target": "visitor",
-          "word": 6,
-          "duration": 1.1
+          "word": 11,
+          "duration": 0.65
         }
       ],
       "sounds": [
         {
           "kind": "whoosh",
-          "word": 1
+          "word": 1,
+          "gain": 0.42
         }
-      ]
+      ],
+      "transition": "cut"
     },
     {
       "role": "setting",
-      "text": "In eighteen fifty one, Leon Foucault hangs a brass and lead ball from the dome of the Pantheon in Paris. Its steel wire measures sixty seven metres, and the ball weighs twenty eight kilograms.",
+      "text": "It's 1851 in Paris. Léon Foucault invites people to see Earth turn. Inside, the stone building feels perfectly still.",
+      "claims": [
+        "invitation",
+        "installation"
+      ],
+      "scene": "street",
+      "visual": "Glide past a cart toward the arch as a visitor crosses the paving to meet Foucault.",
+      "camera": {
+        "from": [
+          0.98,
+          2.13,
+          6.44
+        ],
+        "to": [
+          0.02,
+          1.76,
+          5.15
+        ],
+        "look": [
+          -0.06,
+          1.48,
+          -0.53
+        ],
+        "fov": 49,
+        "roll": 1,
+        "blur": 9,
+        "motion": "glide"
+      },
+      "actions": [
+        {
+          "kind": "walk",
+          "target": "visitor",
+          "word": 6,
+          "duration": 1.8,
+          "to": [
+            -0.42,
+            0,
+            -0.58
+          ]
+        },
+        {
+          "kind": "point",
+          "target": "guide",
+          "word": 15,
+          "duration": 1.3
+        },
+        {
+          "kind": "roll",
+          "target": "cart",
+          "word": 7,
+          "duration": 1.8,
+          "amount": 11
+        }
+      ],
+      "sounds": [
+        {
+          "kind": "wind",
+          "word": 3,
+          "gain": 0.25
+        }
+      ],
+      "transition": "dissolve"
+    },
+    {
+      "role": "escalation",
+      "text": "From the dome of the Panthéon, he hangs a brass and lead ball on a steel wire. It's 67 metres long. The ball weighs 28 kilograms.",
       "claims": [
         "installation"
       ],
       "scene": "hall",
+      "visual": "Reveal the full height of the wire. Foucault points up while the camera travels down toward the heavy bob.",
       "camera": {
         "from": [
           3.25,
@@ -439,47 +717,99 @@
           -0.2
         ]
       },
-      "transition": "cut",
       "actions": [
-        {
-          "kind": "walk",
-          "target": "visitor",
-          "word": 5,
-          "duration": 2.2,
-          "to": [
-            -2.18,
-            0,
-            1.62
-          ]
-        },
         {
           "kind": "point",
           "target": "physicist",
-          "word": 14,
-          "duration": 1.6
+          "word": 2,
+          "duration": 1.5
         },
         {
           "kind": "swing",
           "target": "bob",
-          "word": 11,
-          "duration": 5,
-          "amount": 10
+          "word": 16,
+          "duration": 4,
+          "amount": 12
         }
       ],
       "sounds": [
         {
-          "kind": "chime",
-          "word": 14
+          "kind": "metal-hit",
+          "word": 9,
+          "gain": 0.3
         }
-      ]
+      ],
+      "transition": "cut"
     },
     {
       "role": "escalation",
-      "text": "As the ball swings, a pointer underneath leaves a line in sand. Watch long enough and the next line sits at an angle to the first. The marks slowly spread across the floor. One pass is easy to miss. The sand keeps a record, so you can compare the newer lines with the older ones.",
+      "text": "A pointer under the ball cuts a line in sand. On the next pass, that line looks almost identical. That's a terrible show if you leave early.",
       "claims": [
         "traces"
       ],
+      "scene": "scratch",
+      "visual": "Track low along the cut in the sand. A visitor peers in at the nearly unchanged trace.",
+      "camera": {
+        "from": [
+          1.92,
+          1.23,
+          4.72
+        ],
+        "to": [
+          1.22,
+          1.19,
+          3.66
+        ],
+        "look": [
+          0.08,
+          0.54,
+          0.03
+        ],
+        "fov": 47,
+        "roll": -2,
+        "blur": 13,
+        "motion": "glide"
+      },
+      "actions": [
+        {
+          "kind": "trace",
+          "target": "bob",
+          "word": 9,
+          "duration": 11,
+          "amount": 1.3
+        },
+        {
+          "kind": "swing",
+          "target": "bob",
+          "word": 1,
+          "duration": 5,
+          "amount": 8
+        },
+        {
+          "kind": "inspect",
+          "target": "visitor",
+          "word": 21,
+          "duration": 1.68
+        }
+      ],
+      "sounds": [
+        {
+          "kind": "scrape",
+          "word": 5,
+          "gain": 0.6
+        }
+      ],
+      "transition": "cut"
+    },
+    {
+      "role": "escalation",
+      "text": "But give the sand time. Each pass adds another line, slightly tilted from the last, until the marks spread into a fan. Something is turning.",
+      "claims": [
+        "traces",
+        "mechanism"
+      ],
       "scene": "hall",
+      "visual": "Rise above the fan of marks. The motion becomes visible across the entire dial.",
       "camera": {
         "from": [
           -2.7,
@@ -500,40 +830,38 @@
         "blur": 8,
         "motion": "glide"
       },
-      "transition": "cut",
       "actions": [
         {
           "kind": "trace",
           "target": "bob",
-          "word": 17,
-          "duration": 5,
-          "amount": 32
-        },
-        {
-          "kind": "lean",
-          "target": "visitor",
-          "word": 12,
-          "duration": 1.5
+          "word": 5,
+          "duration": 4.3,
+          "amount": 29
         }
       ],
       "sounds": [
         {
           "kind": "scrape",
-          "word": 9
+          "word": 7,
+          "pan": -0.3
         },
         {
           "kind": "scrape",
-          "word": 27
+          "word": 21,
+          "pan": 0.35,
+          "gain": 0.8
         }
-      ]
+      ],
+      "transition": "cut"
     },
     {
       "role": "turn",
-      "text": "So is the ball changing direction, or is the floor turning underneath it? The answer depends on where you stand.",
+      "text": "So did the ball turn, or did the whole building turn beneath it? The floor is moving under everyone the whole time.",
       "claims": [
         "mechanism"
       ],
       "scene": "model",
+      "visual": "A close-up isolates the dial. The visitor shrugs, then the camera snaps down toward the markings.",
       "camera": {
         "from": [
           0.82,
@@ -553,36 +881,44 @@
         "fov": 49,
         "blur": 10,
         "motion": "whip",
-        "emphasis": 9,
+        "emphasis": 10,
         "roll": 4
       },
-      "transition": "dissolve",
       "actions": [
         {
-          "kind": "point",
+          "kind": "shrug",
           "target": "visitor",
-          "word": 9,
-          "duration": 1.9
+          "word": 3,
+          "duration": 1.1
         },
         {
-          "kind": "react",
-          "target": "visitor",
+          "kind": "spin",
+          "target": "gear",
           "word": 14,
-          "duration": 0.84
+          "duration": 2.0,
+          "amount": 86
         }
       ],
       "sounds": [
         {
-          "kind": "impact",
-          "word": 9
+          "kind": "wood-hit",
+          "word": 11,
+          "gain": 0.44
+        },
+        {
+          "kind": "machine",
+          "word": 14,
+          "gain": 0.3
         }
-      ]
+      ],
+      "transition": "dissolve"
     },
     {
       "role": "analogy",
-      "text": "Picture a toy swing above a spinning turntable. The seat keeps swinging past the same point on the wall while the stripes on the turntable slide underneath. From the turntable, it looks like the swing is turning.",
+      "text": "You see, picture a swing over a spinning turntable. The seat keeps going past the same spot on the wall. But the marks underneath slide sideways. Stand on the turntable and it looks like the swing changes direction.",
       "claims": [],
       "scene": "analogy",
+      "visual": "Show the swing holding its direction as the red marks on the independent disc rotate beneath it.",
       "camera": {
         "from": [
           -2.05,
@@ -603,37 +939,44 @@
         "blur": 0,
         "motion": "glide"
       },
-      "transition": "dissolve",
       "actions": [
         {
           "kind": "spin",
           "target": "dial",
-          "word": 6,
-          "duration": 6.2,
-          "amount": 95
+          "word": 7,
+          "duration": 5.8,
+          "amount": 108
         },
         {
           "kind": "swing",
           "target": "swing",
-          "word": 9,
-          "duration": 6,
-          "amount": 14
+          "word": 10,
+          "duration": 6.1,
+          "amount": 15
         }
       ],
       "sounds": [
         {
+          "kind": "creak",
+          "word": 10,
+          "gain": 0.34
+        },
+        {
           "kind": "whoosh",
-          "word": 6
+          "word": 25,
+          "gain": 0.38
         }
-      ]
+      ],
+      "transition": "dissolve"
     },
     {
       "role": "consequence",
-      "text": "At the North Pole the floor turns all the way around in about a day. In Paris the change is slower. At the equator that shift disappears completely.",
+      "text": "At the North Pole, the floor makes one full turn in about a day. In Paris the shift is slower. At the equator, it disappears.",
       "claims": [
         "latitude"
       ],
       "scene": "globe",
+      "visual": "Rotate the globe beneath a tilted axis while the camera moves from a polar view toward the equator.",
       "camera": {
         "from": [
           2.22,
@@ -652,30 +995,39 @@
         ],
         "fov": 42,
         "blur": 9,
-        "motion": "glide"
+        "motion": "glide",
+        "lookTo": [
+          0,
+          1.44,
+          0
+        ]
       },
-      "transition": "dissolve",
       "actions": [
         {
           "kind": "spin",
           "target": "earth",
           "word": 3,
           "duration": 6.8,
-          "amount": 158
+          "amount": 155
         }
       ],
       "sounds": [
         {
           "kind": "chime",
-          "word": 3
+          "word": 3,
+          "gain": 0.4
         }
-      ]
+      ],
+      "transition": "dissolve"
     },
     {
       "role": "payoff",
-      "text": "Come to see a ball swing and you could miss the show. The thing to watch was the floor under your own feet.",
-      "claims": [],
+      "text": "People came to see Earth turn. The best part of the show was under their feet.",
+      "claims": [
+        "demonstration"
+      ],
       "scene": "closing",
+      "visual": "Return to the crowd around the apparatus. A visitor looks down as the final mark appears in the sand.",
       "camera": {
         "from": [
           1.06,
@@ -697,32 +1049,33 @@
         "motion": "push",
         "lookTo": [
           0,
-          0.35,
+          0.44,
           0
         ]
       },
-      "transition": "dissolve",
       "actions": [
         {
-          "kind": "point",
+          "kind": "inspect",
           "target": "visitor",
           "word": 15,
-          "duration": 1.4
+          "duration": 0.9
         },
         {
           "kind": "trace",
           "target": "bob",
-          "word": 18,
-          "duration": 1.45,
+          "word": 11,
+          "duration": 1.5,
           "amount": 26
         }
       ],
       "sounds": [
         {
           "kind": "scrape",
-          "word": 18
+          "word": 15,
+          "gain": 0.35
         }
-      ]
+      ],
+      "transition": "dissolve"
     }
   ],
   "publish": {
@@ -733,5 +1086,12 @@
     ],
     "category": "28",
     "privacy": "private"
+  },
+  "narrative": {
+    "premise": "A stone building seems to turn because a pendulum refuses to follow its floor.",
+    "stakes": "The sand must reveal motion that neither the spectators nor their building can feel.",
+    "mechanism": "In the ideal polar model the swing plane holds its direction while the rotating Earth carries the floor beneath it. The apparent turning rate changes with latitude.",
+    "analogy": "A swing over a spinning turntable keeps its orientation with respect to the room as the marks beneath it move.",
+    "callback": "Foucault invites people to see Earth turn. The thing they came to see was the floor they were standing on."
   }
 }

@@ -2,17 +2,17 @@
 
 ## Submit a story
 
-Submit one open GitHub Issue containing the JSON package. Use raw JSON or one fenced `json` block with no surrounding prose. Keep the UTF-8 issue body under 55 KB. Use the [sample](../examples/foucault.json), [schema](../src/story/schema.ts), and [asset catalog](architecture.md#scene-vocabulary) to author packages. Every factual assertion needs a supplied claim and citation. Set an unused story ID and use zero-based word offsets within each beat for cues. The narration field equals the beat texts joined by single spaces.
+Submit one open GitHub Issue containing a version 2 JSON package. Use raw JSON or one fenced `json` block with no surrounding prose. Keep the UTF-8 issue body under 55 KB. Use the [sample](../examples/foucault.json), [schema](../src/story/schema.ts), and [asset catalog](architecture.md#scene-vocabulary) to author packages. Every factual assertion needs a supplied claim and citation. Set an unused story ID and use zero-based word offsets within each beat for cues. The narration field equals the beat texts joined by single spaces.
 
 From a trusted account, add the `story-ready` label. It triggers the production workflow. If the issue tool adds the label through a GitHub automation token that cannot trigger new runs, the scheduled poll or manual dispatch still picks it up.
 
 ```sh
 npm run validate -- story.json
+npm run audit -- story.json
 gh issue create --repo Jyozaa/yt-auto --title '[Story] Working title' --body-file story.json --label story-ready
-gh workflow run production.yml --repo Jyozaa/yt-auto -f issue=42
 ```
 
-Replace 42 with the created issue number. Use `gh workflow run production.yml -f issue=42 -f retry=true` to recover a failed or interrupted unchanged story before uploading begins. Actions reads one eligible issue at a time. Check the issue, the run logs, and its artifact links for results.
+If the label did not trigger a run, dispatch `gh workflow run production.yml -f issue=42` with the number of your issue. Add `-f retry=true` to recover a failed or interrupted unchanged story before uploading begins. Actions reads one eligible issue at a time. Check the issue, the run logs, and its artifact links for results.
 
 To bootstrap a fresh repo without labels, create `story-ready` in **Issues → Labels** before trying the labeled submission command. The production workflow creates and synchronizes the other queue labels as it processes its first job.
 
@@ -28,9 +28,9 @@ Only `Jyozaa` is trusted by default. Set the Actions variable `STORY_TRUSTED_AUT
 
 ## Scheduled ChatGPT handoff
 
-Use a separate ChatGPT Scheduled Task to research and fact-check an original history or science story and write the version 1 package. Give the scheduled task the schema, scene catalog and narrative structure. Instruct it to submit only when it can use the connected GitHub app to create an issue as an allowlisted author. Set the issue body to the JSON and label it `story-ready`. The polling job picks up issues even when the connector did not trigger the label workflow.
+Paste the [daily task prompt](CHATGPT_SCHEDULED_STORY_TASK.md) into [ChatGPT Scheduled](https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt) and choose a daily schedule. The task researches and audits a single story, using the current repository contract. It returns a ready-to-submit JSON package if scheduling permissions do not provide an authorized writer. The standard [ChatGPT GitHub app](https://help.openai.com/en/articles/11145903-connecting-github-to-chatgpt) provides read access.
 
-Scheduled ChatGPT issue creation has not been verified. Connector access and write authorization can differ between interactive and scheduled sessions. If the scheduled task cannot create or label the issue, have it return the JSON and use the manual submission commands above.
+To verify a write-enabled scheduled environment, use one valid unused test story with YouTube upload disabled. Confirm that the issue author matches an allowlisted login and that the issue has `story-ready`. Look for a label-triggered production run or dispatch by issue number to test the poll handoff. Treat scheduled issue creation as verified only after observing it from the scheduled session itself. The manual command above uses the authenticated GitHub CLI account and the same production queue.
 
 ## Persistence and recovery
 

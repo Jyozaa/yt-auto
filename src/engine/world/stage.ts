@@ -1,4 +1,8 @@
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import type {Assembly} from './scenery';
+import {arch, cart, gear, rail, barrel, worktable, telescope} from './scenery';
+import {stepsPerSecond} from '../characters/gait';
 import {Actor} from '../characters/toon';
 import {NOINK} from '../effects/ink';
 import {choreograph, clamp, smooth} from '../camera/choreography';
@@ -6,7 +10,7 @@ import {fps, type Story} from '../../story/schema';
 import type {Shot} from '../../story/timeline';
 import {LOOK, LIGHTS} from './lights';
 import {CHAR, TONE, twoTone, untone} from './shade';
-import {ctex, rep, planks, grass, stone, cloudHD, jit} from './paint';
+import {ctex, rep, planks, grass, stone, cloudHD, jit, cobble, facade} from './paint';
 
 const groundStone = () => ctex('rotunda-floor', 512, 512, (g, rand) => {
   g.fillStyle = '#937f79';
@@ -63,6 +67,9 @@ export class Stage {
   private readonly geometries = new Set<T.BufferGeometry>();
   private readonly textures = new Set<T.Texture>();
   private readonly actors: {actor: Actor; entry: Shot['scene']['actors'][number]}[] = [];
+  private readonly assembly: Assembly = {
+    mesh: (...args) => this.mesh(...args), box: (...args) => this.box(...args), cylinder: (...args) => this.cylinder(...args)
+  };
   private readonly animators: ((f: number) => void)[] = [];
 
   constructor(readonly shot: Shot, story: Story, width: number, height: number) {
@@ -91,6 +98,7 @@ export class Stage {
     this.sun.shadow.camera.layers.enable(NOINK);
     this.scene.add(this.sun, this.sun.target);
     this.buildWorld(shot.scene.environment);
+    this.batchScenery();
     for (const entry of shot.scene.props) {
       const group = new T.Group();
       group.position.set(...entry.at);
@@ -142,11 +150,40 @@ export class Stage {
     return copy;
   }
 
+  private batchScenery() {
+    const world = this.scene.getObjectByName('static-environment');
+    if (!world) return;
+    const groups = new Map<string, T.Mesh[]>();
+    world.updateMatrixWorld(true);
+    for (const child of world.children) {
+      if (!(child instanceof T.Mesh) || Array.isArray(child.material) || child.material.transparent ||
+          !child.castShadow || child.layers.isEnabled(NOINK)) continue;
+      const key = `${child.material.id}:${child.geometry.index ? 'indexed' : 'plain'}:${Object.keys(child.geometry.attributes).join(',')}`;
+      const group = groups.get(key) ?? [];
+      group.push(child);
+      groups.set(key, group);
+    }
+    for (const batch of groups.values()) {
+      if (batch.length < 3) continue;
+      const positioned = batch.map((mesh) => mesh.geometry.clone().applyMatrix4(mesh.matrix));
+      const merged = mergeGeometries(positioned);
+      for (const copy of positioned) copy.dispose();
+      if (!merged) continue;
+      this.mesh(world, merged, batch[0].material as T.Material, 0, 0, 0);
+      for (const mesh of batch) {
+        world.remove(mesh);
+        this.geometries.delete(mesh.geometry);
+        mesh.geometry.dispose();
+      }
+    }
+  }
+
   private buildWorld(environment: Shot['scene']['environment']) {
     const world = new T.Group();
+    world.name = 'static-environment';
     this.scene.add(world);
     const floor = this.surface('#ffffff', this.repeat(
-      environment === 'workshop' ? planks() : environment === 'terrace' ? grass() : groundStone(), 22, 22));
+      environment === 'workshop' ? planks() : environment === 'terrace' ? grass() : environment === 'street' ? cobble() : groundStone(), 22, 22));
     const base = this.mesh(world, new T.PlaneGeometry(104, 104), floor, 0, 0, 0);
     base.rotation.x = -Math.PI / 2;
     base.castShadow = false;
@@ -160,7 +197,24 @@ export class Stage {
     const band = this.surface('#917c72');
     const archDark = this.surface('#526779');
     const gold = this.surface('#ad8555');
-    if (environment === 'rotunda') {
+    if (environment === 'street') {
+      const colors = ['#d4b496', '#cabb9b', '#b99a82', '#debf9d'];
+      for (let i = -2; i <= 2; i++) {
+        const x = i * 4.85;
+        const w = 4.75, h = 5.2 + Math.abs(i) * .72;
+        const paint = facade(`street-${i}`, w, h, {wall: colors[(i + 4) % colors.length], shutter: '#56676f', door: true, timber: i % 2 === 0});
+        const frontage = this.surface('#ffffff', paint);
+        this.box(world, stoneWall, x, h / 2, -8.58, w, h, 3.2);
+        this.mesh(world, new T.PlaneGeometry(w, h), frontage, x, h / 2, -6.97).castShadow = false;
+        this.box(world, band, x, h + .14, -8.50, w + .27, .27, 3.47);
+        this.box(world, cream, x, .14, -6.73, w, .28, .5);
+        const roof = this.cylinder(world, this.surface('#5c586c'), x, h + .77, -8.44, .16, w * .69, 1.55, 4);
+        roof.rotation.y = Math.PI / 4;
+        this.box(world, stoneWall, x + .65, h + 1.21, -9.03, .46, 1.32, .44);
+      }
+      return;
+    }
+    if (environment === 'rotunda' || environment === 'gallery') {
       this.box(world, stoneWall, 0, 4.9, -10.5, 25, 9.8, 1);
       this.box(world, band, 0, .48, -9.85, 25, .96, .45);
       this.box(world, cream, 0, 5.15, -9.7, 25, .42, .83);
@@ -188,6 +242,14 @@ export class Stage {
         }
         this.cylinder(world, gold, x, 4.85, z, .50, .39, .24);
         this.box(world, cream, x, 5.03, z, 1.03, .15, 1.03);
+      }
+      if (environment === 'gallery') {
+        for (const x of [-5, 0, 5]) {
+          const molding = new T.Group();
+          molding.position.set(x, 0, -7.13);
+          world.add(molding);
+          arch(this.assembly, molding, stoneWall, gold);
+        }
       }
       const ceiling = this.mesh(world, new T.SphereGeometry(13, 32, 16, 0, TAU, 0, Math.PI * .5),
         this.surface('#839aa0'), 0, 7.7, -2);
@@ -227,10 +289,34 @@ export class Stage {
     const brass = this.surface(color ?? '#c99448');
     const dark = this.surface('#524551');
     const wood = this.surface(color ?? '#bd8655', this.repeat(planks(), 1, 1));
+    const materials = {wood, dark, brass};
+    const progress = (frame: number, k: 'roll' | 'spin') => actions.reduce((value, action) =>
+      action.kind === k && 'amount' in action ? value + action.amount * smooth((frame - action.frame) / (action.duration * fps)) : value, 0);
+    if (kind === 'arch') { arch(this.assembly, g, this.surface(color ?? '#e0c4a2', stone()), dark); return; }
+    if (kind === 'rail') { rail(this.assembly, g, materials); return; }
+    if (kind === 'barrel') { barrel(this.assembly, g, materials); return; }
+    if (kind === 'worktable') { worktable(this.assembly, g, materials); return; }
+    if (kind === 'telescope') { telescope(this.assembly, g, materials); return; }
+    if (kind === 'gear') {
+      const rotor = gear(this.assembly, g, materials);
+      this.animators.push((f) => { rotor.rotation.z = T.MathUtils.degToRad(progress(f, 'spin')); });
+      return;
+    }
+    if (kind === 'cart') {
+      const wheels = cart(this.assembly, g, materials);
+      const start = g.position.clone();
+      const direction = new T.Vector3(0, 0, 1).applyEuler(g.rotation);
+      this.animators.push((f) => {
+        const distance = progress(f, 'roll') / 32;
+        g.position.copy(start).addScaledVector(direction, distance);
+        for (const wheel of wheels) wheel.rotation.x = distance / .42;
+      });
+      return;
+    }
     if (kind === 'swing') {
-      for (const z of [-.78, .78]) for (const x of [-.68, .68]) {
-        const leg = this.box(g, wood, x, 1.48, z * .66, .11, 3.13, .11);
-        leg.rotation.x = .25 * Math.sign(z);
+      for (const side of [-1, 1]) for (const x of [-.68, .68]) {
+        const leg = this.box(g, wood, x, 1.46, side * .36, .11, 3.01, .11);
+        leg.rotation.x = -.24 * side;
       }
       this.box(g, wood, 0, 2.91, 0, 1.58, .13, .14);
       const pivot = new T.Group();
@@ -354,13 +440,17 @@ export class Stage {
       const actions = this.shot.actions.filter((a) => a.target === entry.id && frame >= a.frame);
       const walk = actions.findLast((a) => a.kind === 'walk');
       const at = new T.Vector3(...entry.at);
-      let stride = 0;
+      let stride = 0, cycle = 0;
+      const now = frame / fps;
       if (walk?.kind === 'walk') {
         const t = clamp((frame - walk.frame) / (walk.duration * fps));
         at.lerp(new T.Vector3(...walk.to), t);
-        stride = Math.sin(t * walk.duration * TAU * 1.48) * Math.min(1, 12 * t, 12 * (1 - t));
+        cycle = t * walk.duration * stepsPerSecond / 2;
+        stride = Math.min(1, 10 * t, 10 * (1 - t));
+        const path = new T.Vector3(...walk.to).sub(new T.Vector3(...entry.at)).length();
+        stride *= Math.min(1, path / Math.max(.1, walk.duration * .8));
       }
-      const envelope = (kind: 'point' | 'react' | 'lean') => {
+      const envelope = (kind: 'point' | 'react' | 'lean' | 'shrug' | 'inspect' | 'flinch' | 'nod') => {
         const action = actions.findLast((a) => a.kind === kind);
         if (!action) return 0;
         const elapsed = frame - action.frame;
@@ -369,8 +459,14 @@ export class Stage {
       actor.mesh.position.copy(at);
       actor.mesh.quaternion.copy(this.camera.quaternion);
       actor.shadow.position.copy(at).y += .012;
-      actor.draw({walk: stride, bob: Math.abs(stride), blink: (frame + index * 13) % (49 + index * 9) < 3,
-        lean: envelope('lean') + .28 * stride, point: envelope('point'), surprise: envelope('react')},
+      const flinch = envelope('flinch'), inspect = envelope('inspect'), shrug = envelope('shrug');
+      const breath = Math.sin(now * 5.2 + index * 1.83) * .061;
+      actor.draw({walk: stride, cycle, bob: Math.abs(Math.sin(cycle * TAU)) * stride + breath,
+        blink: (frame + index * 13) % (49 + index * 9) < 3,
+        lean: envelope('lean') + inspect * .41 - flinch * .66 + .12 * stride,
+        point: envelope('point'), shrug, inspect, flinch,
+        surprise: Math.max(envelope('react'), flinch * .88), nod: envelope('nod') * Math.sin(now * 13),
+        mood: entry.look ?? 'neutral'},
       entry.facing === 'left' ? -1 : 1, height);
     });
     return lens;

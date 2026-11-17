@@ -9,18 +9,20 @@ export const roles = {
   materials: 'Review painted texture, repetition, surface detail, and separation between adjacent objects.',
   lighting: 'Review exposure, warm/cool separation, contact shadows, and consistency across lighting changes.',
   post: 'Review world ink and lens blur. Check doubled outlines, halos, visible focus target, and excessive bloom.',
-  narrative: 'Review whether each image and action makes the narrated beat readable, including transitions and the final beat.'
+  narrative: 'Review whether each image and action makes the narrated beat readable, including transitions and the final beat.',
+  continuity: 'Compare adjacent shots and cue frames for continuity of pose, prop state, direction, time, and geography.'
 } as const;
 
 const answer = z.strictObject({
   severity: z.enum(['pass', 'review', 'block']),
   findings: z.array(z.string().max(450)).max(4),
-  repair: z.enum(['soften-look', 'manual', 'none'])
+  repair: z.enum(['soften-look', 'manual', 'none']),
+  fix: z.string().min(1).max(450).optional()
 });
 
 export type Review = {
   shot: number; role: keyof typeof roles; severity: 'pass' | 'review' | 'block';
-  findings: string[]; repair: 'soften-look' | 'manual' | 'none';
+  findings: string[]; fix?: string; repair: 'soften-look' | 'manual' | 'none';
 };
 
 export interface VisionVerifier {
@@ -37,7 +39,9 @@ function configuredVerifier(): VisionVerifier | undefined {
       const response = await fetch(url, {
         method: 'POST', signal: AbortSignal.timeout(80_000), redirect: 'error',
         headers: {'Content-Type': 'application/json', ...(process.env.VISION_API_KEY ? {Authorization: `Bearer ${process.env.VISION_API_KEY}`} : {})},
-        body: JSON.stringify({role, criteria: roles[role], beat: shot.beat.text, scene: shot.scene.description, images})
+        body: JSON.stringify({role, criteria: roles[role], beat: shot.beat.text, visual: shot.beat.visual,
+          scene: shot.scene.description, shot: {start: shot.start, end: shot.end, transition: shot.beat.transition,
+            actions: shot.actions, sounds: shot.sounds}, images})
       });
       if (!response.ok) throw new Error(`Visual verifier returned HTTP ${response.status}`);
       return answer.parse(await response.json());
@@ -48,11 +52,18 @@ function configuredVerifier(): VisionVerifier | undefined {
 export async function reviewShots(film: Film, shots: {index: number; stills: string[]}[], verifier = configuredVerifier()): Promise<Review[]> {
   if (!verifier) return [];
   const results: Review[] = [];
+  let previous: string | undefined;
   for (const {index, stills} of shots) {
     const images = await Promise.all(stills.map(async (path) => (await readFile(path)).toString('base64')));
-    for (const role of Object.keys(roles) as (keyof typeof roles)[]) {
-      results.push({shot: index, role, ...await verifier.inspect(role, film.shots[index], images)});
+    const checks = Object.keys(roles) as (keyof typeof roles)[];
+    for (let i = 0; i < checks.length; i += 3) {
+      const reviews = await Promise.all(checks.slice(i, i + 3).map(async (role) => {
+        const context = role === 'continuity' && previous ? [previous, ...images] : images;
+        return {shot: index, role, ...await verifier.inspect(role, film.shots[index], context)};
+      }));
+      results.push(...reviews);
     }
+    previous = images.at(-1);
   }
   return results;
 }

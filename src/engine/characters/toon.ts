@@ -2,9 +2,13 @@ import * as THREE from 'three';
 import {NOINK} from '../effects/ink';
 import type {Story} from '../../story/schema';
 import {cardShade, CARD_K} from './cardshade';
+import {gaitFoot} from './gait';
 
 const ink = '#271b30';
-export type Pose = {walk: number; bob: number; lean: number; point: number; surprise: number; blink: boolean};
+export type Pose = {
+  walk: number; cycle: number; bob: number; lean: number; point: number; surprise: number; blink: boolean;
+  shrug: number; inspect: number; flinch: number; nod: number; mood: 'neutral' | 'curious' | 'doubt';
+};
 
 export class Actor {
   private readonly canvas = document.createElement('canvas');
@@ -60,20 +64,23 @@ export class Actor {
       g.fillStyle = fill;
       g.fill();
     };
-    const step = pose.walk * 35;
-    const body = 265 - pose.bob * 10;
+    const step = Math.sin(pose.cycle * Math.PI * 2) * pose.walk * 33;
+    const body = 265 - pose.bob * 9 - pose.shrug * 6;
     for (const side of [-1, 1]) {
-      const foot = 120 + side * (17 + step);
-      const ground = 387 - Math.max(0, -side * pose.walk) * 23;
-      stroke([[120 + side * 14, body], [124 + side * (12 + step * .55), (body + ground) / 2], [foot, ground]], 8, c.trousers);
+      const footPose = gaitFoot(pose.cycle, side);
+      const foot = 120 + side * 16 + 32 * footPose.reach * pose.walk;
+      const ground = 388 - footPose.lift * pose.walk * 22;
+      stroke([[120 + side * 14, body], [120 + side * 14 + (foot - 120) * .55, (body + ground) / 2 - footPose.lift * 5], [foot, ground]], 8, c.trousers);
       stroke([[foot - 4, ground], [foot + 11, ground]], 10);
     }
     g.save();
     g.translate(122, body);
     g.rotate(pose.lean * .26);
     g.translate(-122, -265);
-    stroke([[101, 183], [79, 222 - step * .38], [88 - step * .58, 249 - pose.surprise * 45]], 6);
-    dot(88 - step * .58, 249 - pose.surprise * 45, 6, c.skin);
+    const farHand = [88 - step * .58 - pose.shrug * 28, 249 - pose.surprise * 45 - pose.shrug * 46 - pose.flinch * 23];
+    stroke([[101, 183], [79 - pose.shrug * 12, 222 - step * .38], farHand], 6);
+    dot(farHand[0], farHand[1], 6, c.skin);
+    if (pose.shrug > .45) stroke([[farHand[0] - 3, farHand[1]], [farHand[0] - 8, farHand[1] - 3]], 2.2);
     g.beginPath();
     g.moveTo(103, 168);
     g.bezierCurveTo(83, 191, 89, 240, c.outfit === 'dress' ? 73 : 91, 269);
@@ -97,11 +104,15 @@ export class Actor {
       stroke([[117, 197], [118, 256]], 2);
     }
     for (let y = 230; y < 261; y += 11) dot(132, y, 2, '#e5bb67');
-    const hand = [157 + pose.point * 37 + step * .42, 241 - pose.point * 65 - pose.surprise * 29];
-    stroke([[144, 183], [155 + pose.point * 13, 215 - pose.point * 32], hand], 7);
+    const hand = [157 + pose.point * 37 + step * .42 + pose.shrug * 25 - pose.flinch * 14,
+      241 - pose.point * 65 - pose.surprise * 29 - pose.shrug * 49 - pose.flinch * 43 + pose.inspect * 17];
+    stroke([[144, 183], [155 + pose.point * 13 + pose.shrug * 15, 215 - pose.point * 32 - pose.flinch * 17], hand], 7);
     dot(hand[0], hand[1], 7, c.skin);
+    if (pose.point > .4) stroke([hand, [hand[0] + 12 * pose.point, hand[1] - 2]], 3.2, c.skin);
 
-    g.translate(0, -pose.surprise * 3);
+    g.translate(127, 164 - pose.surprise * 3);
+    g.rotate(.13 * pose.inspect + .09 * pose.nod - .08 * pose.shrug);
+    g.translate(-127, -164);
     g.beginPath();
     g.moveTo(77, 112);
     g.bezierCurveTo(76, 76, 101, 53, 130, 55);
@@ -114,7 +125,13 @@ export class Actor {
     skin.addColorStop(1, '#b67567');
     g.fillStyle = skin;
     g.fill();
-    g.lineWidth = 3.4;
+    g.lineWidth = 3.0;
+    g.stroke();
+    g.beginPath();
+    g.moveTo(174, 130);
+    g.bezierCurveTo(170, 154, 153, 168, 131, 171);
+    g.quadraticCurveTo(99, 171, 87, 151);
+    g.lineWidth = 5.1;
     g.stroke();
     g.beginPath();
     g.moveTo(79, 121);
@@ -131,19 +148,26 @@ export class Actor {
     g.stroke();
     dot(91, 128, 8, c.skin);
     stroke([[86, 131], [91, 135]], 2.4, '#784956');
-    for (const x of [121, 151]) {
-      const y = 116 - pose.surprise * 2;
-      stroke([[x - 5, 106 - pose.surprise * 7], [x + 4, 104 - pose.surprise * 5]], 2.8);
-      if (pose.blink) stroke([[x - 4, y], [x + 4, y]], 2.5);
-      else {
+    const curiosity = pose.mood === 'curious' ? .35 : 0;
+    const doubt = pose.mood === 'doubt' ? .55 : 0;
+    for (const x of [120, 148]) {
+      const y = 116 + pose.inspect * 4 - pose.surprise * 2;
+      const brow = 104 - pose.surprise * 7 - (pose.shrug + doubt) * (x < 130 ? 7 : 1);
+      stroke([[x - 6, brow + 2], [x + 4, brow]], 2.8);
+      if (pose.blink || pose.inspect > .65 || doubt > .3) stroke([[x - 4, y], [x + 4, y - doubt * 2]], 2.5);
+      else if (pose.surprise > .55) {
+        dot(x + 2, y, 7, '#fdf4e4');
+        dot(x + 4, y + 1, 3.45, ink);
+      } else {
         g.beginPath();
-        g.ellipse(x + 2, y, 3.5, 5 + pose.surprise * 2, 0, 0, Math.PI * 2);
+        g.ellipse(x + 3, y, 3.25, 3.55 + curiosity + pose.surprise * 2, 0, 0, Math.PI * 2);
         g.fillStyle = ink;
         g.fill();
       }
     }
     stroke([[140, 119], [145, 131], [140, 133]], 2.4, '#8b535a');
     if (pose.surprise > .15) dot(139, 148, 3 + pose.surprise * 5);
+    else if (pose.inspect > .45 || doubt > .3 || pose.shrug > .55) stroke([[129, 148], [144, 147 + pose.shrug * 3]], 2.7);
     else {
       g.beginPath();
       g.moveTo(126, 146);

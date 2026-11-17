@@ -17,7 +17,11 @@ const sourceUrl = z.url({protocol: /^https$/}).max(512).refine((value) => {
 export const fps = 30;
 export const wordsOf = (value: string) => Array.from(value.matchAll(/[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu), (match) => match[0]);
 export const beatRoles = ['hook', 'setting', 'escalation', 'turn', 'analogy', 'consequence', 'payoff'] as const;
-const cueNames = ['step', 'impact', 'whoosh', 'chime', 'scrape'] as const;
+export const cueNames = [
+  'step', 'impact', 'whoosh', 'chime', 'scrape', 'step-wood', 'step-stone', 'step-earth',
+  'door', 'machine', 'wood-hit', 'metal-hit', 'stone-hit', 'creak', 'snap', 'splash', 'wind', 'reaction'
+] as const;
+export type CueKind = typeof cueNames[number];
 const placement = {id, at: xyz};
 const camera = z.strictObject({
   from: xyz, to: xyz, look: xyz, lookTo: xyz.optional(),
@@ -31,11 +35,11 @@ const camera = z.strictObject({
 const scene = z.strictObject({
   id,
   description: line(400),
-  environment: z.enum(['rotunda', 'terrace', 'workshop', 'diagram']),
+  environment: z.enum(['rotunda', 'terrace', 'workshop', 'diagram', 'street', 'gallery']),
   light: z.enum(['day', 'golden']),
-  actors: z.array(z.strictObject({...placement, character: id, facing: z.enum(['left', 'right']).default('right')})).max(8),
+  actors: z.array(z.strictObject({...placement, character: id, facing: z.enum(['left', 'right']).default('right'), look: z.enum(['neutral', 'curious', 'doubt']).optional()})).max(8),
   props: z.array(z.strictObject({
-    ...placement, kind: z.enum(['pendulum', 'swing', 'turntable', 'globe', 'bench', 'crate', 'tree', 'lamp', 'plinth']),
+    ...placement, kind: z.enum(['pendulum', 'swing', 'turntable', 'globe', 'bench', 'crate', 'tree', 'lamp', 'plinth', 'arch', 'gear', 'cart', 'rail', 'barrel', 'worktable', 'telescope']),
     scale: z.number().min(0.2).max(3).default(1),
     yaw: z.number().min(-360).max(360).default(0),
     color: color.optional()
@@ -43,19 +47,21 @@ const scene = z.strictObject({
 });
 const action = z.discriminatedUnion('kind', [
   z.strictObject({kind: z.literal('walk'), target: id, word: z.number().int().min(0), duration: seconds, to: xyz}),
-  z.strictObject({kind: z.enum(['point', 'lean', 'react']), target: id, word: z.number().int().min(0), duration: seconds}),
-  z.strictObject({kind: z.enum(['swing', 'spin', 'trace']), target: id, word: z.number().int().min(0), duration: seconds,
+  z.strictObject({kind: z.enum(['point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod']), target: id, word: z.number().int().min(0), duration: seconds}),
+  z.strictObject({kind: z.enum(['swing', 'spin', 'trace', 'roll']), target: id, word: z.number().int().min(0), duration: seconds,
     amount: z.number().min(-180).max(180)})
 ]);
 const beat = z.strictObject({
   role: z.enum(beatRoles),
+  visual: line(300).optional(),
   text: line(620),
   claims: z.array(id).max(12),
   scene: id,
   camera,
   transition: z.enum(['cut', 'dissolve']).default('cut'),
   actions: z.array(action).max(16),
-  sounds: z.array(z.strictObject({kind: z.enum(cueNames), word: z.number().int().min(0)})).max(16)
+  sounds: z.array(z.strictObject({kind: z.enum(cueNames), word: z.number().int().min(0),
+    pan: z.number().min(-1).max(1).optional(), gain: z.number().min(.05).max(1).optional()})).max(16)
 });
 const publish = z.strictObject({
   description: z.string().max(4200).optional(),
@@ -66,14 +72,21 @@ const publish = z.strictObject({
 });
 
 export const storySchema = z.strictObject({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   id,
   title: line(140),
   youtubeTitle: line(100),
   topic: z.enum(['history', 'science']),
   summary: line(650),
+  narrative: z.strictObject({
+    premise: line(300),
+    stakes: line(300),
+    mechanism: line(400),
+    analogy: line(300),
+    callback: line(300)
+  }).optional(),
   duration: z.number().min(55).max(70),
-  sources: z.array(z.strictObject({id, title: line(180), url: sourceUrl})).min(1).max(16),
+  sources: z.array(z.strictObject({id, title: line(180), url: sourceUrl, kind: z.enum(['primary', 'institutional', 'secondary']).optional()})).min(1).max(16),
   claims: z.array(z.strictObject({
     id, text: line(600), risk: z.enum(['ordinary', 'high']),
     sources: z.array(id).min(1).max(8)
@@ -139,11 +152,20 @@ export const storySchema = z.strictObject({
       const actor = place?.actors.some((p) => p.id === a.target);
       if ((a.kind === 'swing' && !['pendulum', 'swing'].includes(prop?.kind ?? '')) ||
           (a.kind === 'trace' && prop?.kind !== 'pendulum') ||
-          (a.kind === 'spin' && !['globe', 'turntable'].includes(prop?.kind ?? '')) ||
-          (['walk', 'point', 'lean', 'react'].includes(a.kind) && !actor)) issue(path, `Unsupported action target ${a.target} for ${a.kind}`);
+          (a.kind === 'spin' && !['globe', 'turntable', 'gear'].includes(prop?.kind ?? '')) ||
+          (a.kind === 'roll' && prop?.kind !== 'cart') ||
+          (['walk', 'point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod'].includes(a.kind) && !actor)) {
+        issue(path, `Unsupported action target ${a.target} for ${a.kind}`);
+      }
       if (a.kind === 'swing' && Math.abs(a.amount) > 27) issue(path, 'Swing amplitude cannot exceed 27 degrees');
     }
   });
+  if (story.version === 2) {
+    if (!story.narrative) issue(['narrative'], 'Version 2 requires a narrative brief');
+    if (!story.sources.some((source) => source.kind === 'primary')) issue(['sources'], 'Version 2 requires a primary source');
+    if (story.sources.some((source) => !source.kind)) issue(['sources'], 'Classify every source');
+    if (story.beats.some((entry) => !entry.visual)) issue(['beats'], 'Every beat needs a visual intention');
+  }
   if (seen.size !== beatRoles.length) issue(['beats'], 'Every narrative role is required');
   if (story.publish?.publishAt && story.publish.privacy !== 'private') issue(['publish'], 'Schedule requires private privacy');
 });

@@ -1,4 +1,5 @@
 import {readFile, writeFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {z} from 'zod';
 import {wordsOf, type Story} from '../story/schema';
@@ -15,10 +16,40 @@ const spans = (text: string) => {
 };
 
 interface VoiceProvider {
-  create(story: Story, dir: string): Promise<{raw: string; words: Word[]}>;
+  create(story: Story, dir: string): Promise<{raw: string; words: Word[]; provider?: string}>;
 }
 
-const local: VoiceProvider = {
+const python = process.env.PYTHON || (existsSync('.venv/bin/python') ? '.venv/bin/python' : 'python3.12');
+const kokoro: VoiceProvider = {
+  async create(story, dir) {
+    const path = join(dir, 'kokoro-input.json');
+    const raw = join(dir, 'raw-voice.wav');
+    const beats = story.beats.map(({text}) => {
+      const tokens = spans(text);
+      return tokens.map(({word, start, end}, i) => ({
+        word,
+        before: text.slice(tokens[i - 1]?.end ?? 0, start),
+        after: i === tokens.length - 1 ? text.slice(end) : ''
+      }));
+    });
+    await writeFile(path, JSON.stringify({beats}));
+    try {
+      const {stdout} = await run(python, ['scripts/kokoro_voice.py', path, raw]);
+      const result = z.object({voice: z.string(), speed: z.number(), method: z.string(),
+        words: z.array(z.object({word: z.string(), start: z.number(), end: z.number(), rms: z.number()}))
+      }).parse(JSON.parse(stdout.toString()));
+      const {words, ...metadata} = result;
+      await writeFile(join(dir, 'voice-alignment.json'), JSON.stringify({
+        ...metadata, minWordRms: Math.min(...words.map((word) => word.rms))
+      }, null, 2));
+      return {raw, words, provider: `kokoro:${result.voice}`};
+    } catch (error) {
+      throw new Error(`Kokoro narration or offline alignment failed. Check Python 3.12 dependencies, verified assets, and pronunciation. ${String(error)}`);
+    }
+  }
+};
+
+const espeak: VoiceProvider = {
   async create(story, dir) {
     const raw = join(dir, 'raw-voice.wav');
     const script = join(dir, 'narration-input.json');
@@ -87,31 +118,28 @@ const elevenlabs: VoiceProvider = {
   }
 };
 
-export async function createVoice(story: Story, dir: string) {
+export async function createVoice(story: Story, dir: string, enforceRuntime = true) {
   const output = join(dir, 'voice.wav');
-  const name = process.env.TTS_PROVIDER ?? 'local';
+  const name = process.env.TTS_PROVIDER || 'kokoro';
   let alignment: Alignment;
   if (name === 'file') {
     const {VOICE_FILE: path, WORDS_FILE: timing} = process.env;
     if (!path || !timing) throw new Error('File voice requires VOICE_FILE and WORDS_FILE');
-    alignment = verifyAlignment(story, JSON.parse(await readFile(timing, 'utf8')));
+    alignment = verifyAlignment(story, JSON.parse(await readFile(timing, 'utf8')), enforceRuntime);
     await ffmpeg(['-v', 'error', '-i', path, '-ar', '48000', '-ac', '1', output]);
     const duration = Number((await probe(output)).format.duration);
     if (Math.abs(duration - alignment.duration) > .04) throw new Error('Supplied voice duration differs from its alignment');
     alignment = {...alignment, provider: 'file', duration};
   } else {
-    const provider = name === 'local' ? local : name === 'elevenlabs' ? elevenlabs : undefined;
+    const provider = name === 'kokoro' ? kokoro :
+      name === 'espeak' || name === 'local' ? espeak : name === 'elevenlabs' ? elevenlabs : undefined;
     if (!provider) throw new Error(`Unknown TTS_PROVIDER ${name}`);
-    const {raw, words} = await provider.create(story, dir);
-    const rawDuration = Number((await probe(raw)).format.duration);
-    const speed = rawDuration / story.duration;
-    if (!Number.isFinite(speed) || speed < .68 || speed > 1.40) throw new Error(`Narration pace requires excessive time stretch (${speed})`);
-    await ffmpeg(['-v', 'error', '-i', raw, '-af', `atempo=${speed},apad,atrim=duration=${story.duration}`, '-ar', '48000', '-ac', '1', output]);
-    alignment = {provider: name, duration: story.duration, words: words.map(({word, start, end}) => ({
-      word, start: start / speed, end: Math.min(story.duration, end / speed)
-    }))};
+    const {raw, words, provider: label} = await provider.create(story, dir);
+    await ffmpeg(['-v', 'error', '-i', raw, '-ar', '48000', '-ac', '1', output]);
+    const duration = Number((await probe(output)).format.duration);
+    alignment = {provider: label ?? (name === 'local' ? 'espeak' : name), duration, words};
   }
-  verifyAlignment(story, alignment);
+  verifyAlignment(story, alignment, enforceRuntime);
   await writeFile(join(dir, 'words.json'), JSON.stringify(alignment, null, 2));
   return {alignment, output};
 }

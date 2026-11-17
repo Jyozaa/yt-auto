@@ -1,6 +1,6 @@
 import {fps, wordsOf, type Beat, type Scene, type Story} from './schema';
 
-export type Word = {word: string; start: number; end: number};
+export type Word = {word: string; start: number; end: number; rms?: number};
 export type Alignment = {duration: number; words: Word[]; provider: string};
 export type Shot = {
   start: number;
@@ -13,13 +13,17 @@ export type Shot = {
 };
 export type Film = {story: Story; shots: Shot[]; frames: number};
 
-export function verifyAlignment(story: Story, alignment: Alignment) {
+export function verifyAlignment(story: Story, alignment: Alignment, enforceRuntime = true) {
   const expected = wordsOf(story.narration);
-  if (!Number.isFinite(alignment.duration) || alignment.duration < 55 || alignment.duration > 70) {
-    throw new Error(`Voice duration must be 55–70 seconds, received ${alignment.duration}`);
+  if (!Number.isFinite(alignment.duration) || alignment.duration <= 0) throw new Error('Voice duration is invalid');
+  if (enforceRuntime && (alignment.duration < 55 || alignment.duration > 70)) {
+    throw new Error(`Narration is ${alignment.duration.toFixed(2)} seconds. Edit the script for 55–70 seconds or adjust the voice speed within its documented range.`);
   }
   if (!Array.isArray(alignment.words) || expected.length !== alignment.words.length) {
     throw new Error('Word alignment does not cover the narration');
+  }
+  if (alignment.provider.startsWith('kokoro:') && alignment.words[0]?.start > .16) {
+    throw new Error('Kokoro narration starts after the first few frames');
   }
   let previous = 0;
   alignment.words.forEach(({word, start, end}, i) => {

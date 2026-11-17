@@ -15,7 +15,9 @@
     "queue": "tsx scripts/queue.ts",
     "youtube:auth": "tsx scripts/youtube-auth.ts",
     "youtube:upload": "tsx scripts/queue.ts finish",
-    "audio": "tsx scripts/audio.ts"
+    "audio": "tsx scripts/audio.ts",
+    "audit": "tsx scripts/audit.ts",
+    "benchmark": "tsx scripts/benchmark.ts"
   },
   "dependencies": {
     "@remotion/bundler": "4.0.544",

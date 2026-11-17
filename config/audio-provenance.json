@@ -1,0 +1,10 @@
+{
+  "score": {"type": "procedural", "source": "src/audio/design.ts and src/audio/mix.ts", "author": "YT-auto"},
+  "effects": {"type": "procedural", "source": "src/audio/design.ts", "author": "YT-auto", "recordings": []},
+  "ambience": {"type": "procedural", "source": "src/audio/design.ts", "author": "YT-auto"},
+  "methodReference": {
+    "url": "https://github.com/mromidev/claude-animated-shorts/tree/e3b817b6afc6cd413466d43f11ba31209e034bbf/templates/audio",
+    "license": "MIT",
+    "credit": "Mr omi, event-based sound design and voice-driven gain automation"
+  }
+}

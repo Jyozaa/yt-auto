@@ -30,6 +30,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng libnss3 libgbm1 libasound2t64
+      - uses: ./.github/actions/kokoro
       - run: npm run preview -- examples/foucault.json --output out/preview
         env:
           PREVIEW_WIDTH: ${{ inputs.width }}
@@ -41,6 +42,9 @@ jobs:
           path: |
             out/preview/short.mp4
             out/preview/words.json
+            out/preview/voice-alignment.json
+            out/preview/story-audit.json
+            out/preview/cues.json
             out/preview/storyboard.json
             out/preview/qa/
           if-no-files-found: warn

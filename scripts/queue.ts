@@ -4,6 +4,7 @@ import {z} from 'zod';
 import {GitHub, allowedAuthor, labels, parseIssue, reserve, storyHash, ticketSchema, transition, type Issue, type Ticket} from '../src/integrations/github';
 import {uploadEnabled, uploadVideo} from '../src/integrations/youtube';
 import {storySchema} from '../src/story/schema';
+import {auditStory} from '../src/story/quality';
 
 const {
   GITHUB_TOKEN: token, GITHUB_REPOSITORY: repo, GITHUB_SHA: sha, GITHUB_RUN_ID: runId,
@@ -53,6 +54,20 @@ async function claim() {
   }
   const ticket = {story: story.id, issue: issue.number, issueId: issue.id, hash: storyHash(story)};
   await mkdir(dir, {recursive: true});
+  const olderReservation = (await machine()).entries[issue.id];
+  if (!olderReservation || olderReservation.hash !== ticket.hash ||
+      !['done', 'uploaded', 'upload-started'].includes(olderReservation.status)) {
+    if (actionsOutput) await appendFile(actionsOutput, 'audited=true\n');
+    const report = await auditStory(story, {allowLegacy: olderReservation?.hash === ticket.hash}).catch(async (error) => {
+      await writeFile(join(dir, 'story-audit.json'), JSON.stringify({passed: false, reviewerError: String(error)}, null, 2));
+      throw error;
+    });
+    await writeFile(join(dir, 'story-audit.json'), JSON.stringify(report, null, 2));
+    if (!report.passed) {
+      await mark(issue, 'rejected', 'Story quality gate rejected the package. See story-audit.json in the diagnostics artifact.');
+      return;
+    }
+  }
   await writeFile(join(dir, 'story.json'), JSON.stringify(story, null, 2));
   await writeFile(join(dir, 'ticket.json'), JSON.stringify(ticket));
   const result = await github.mutate((ledger) => reserve(ledger, ticket, run, retry), sha!);
@@ -75,7 +90,7 @@ async function render() {
   const recorded = (await machine()).entries[ticket.issueId];
   if (recorded?.run !== run || recorded.status !== 'processing') throw new Error('This run has no production reservation');
   const {produce} = await import('../src/render/produce');
-  const video = await produce(story, dir, false);
+  const video = await produce(story, dir, false, false, true);
   if (!video) throw new Error('Production returned no QA-approved output');
   await mkdir(deliver, {recursive: true});
   await copyFile(video, join(deliver, 'short.mp4'));

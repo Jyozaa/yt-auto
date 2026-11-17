@@ -19,6 +19,7 @@ export type Props = {
   frames: number;
   repair: number[];
   samples: number;
+  offset?: number;
 };
 
 function makeView(canvas: HTMLCanvasElement, shot: Shot, film: Film, width: number, height: number, repair: boolean, samples: number) {
@@ -79,13 +80,13 @@ function View({film, shot, frame, alpha, repair, samples}: {
   return <canvas ref={canvas} width={width} height={height} style={{position: 'absolute', inset: 0, opacity: alpha}} />;
 }
 
-function Short({film, repair, samples}: Props) {
-  const frame = useCurrentFrame();
+function Short({film, repair, samples, offset = 0}: Props) {
+  const frame = useCurrentFrame() + offset;
   const index = film.shots.findIndex((shot) => frame < shot.end);
   const shot = film.shots[index];
   const fade = index > 0 && shot.beat.transition === 'dissolve' ? smooth((frame - shot.start) / 7) : 1;
   return <AbsoluteFill style={{background: '#1c202b'}}>
-    {fade < 1 && <View key={index - 1} film={film} shot={film.shots[index - 1]} frame={shot.start - 1}
+    {fade < 1 && <View key={index - 1} film={film} shot={film.shots[index - 1]} frame={shot.start - 1 + Math.floor((frame - shot.start) * .30)}
       alpha={1} repair={repair.includes(index - 1)} samples={samples}/>}
     <View key={index} film={film} shot={shot} frame={frame} alpha={fade} repair={repair.includes(index)} samples={samples}/>
   </AbsoluteFill>;

@@ -10,7 +10,7 @@ import {ffmpeg} from '../audio/process';
 export const profiles = {preview: 360, hd: 1080, final: 1440} as const;
 const supportedWidths = [180, 270, 360, 540, 720, 1080, 1440];
 export function config(preview: boolean) {
-  const width = Number(process.env[preview ? 'PREVIEW_WIDTH' : 'FINAL_WIDTH'] ?? (preview ? profiles.preview : profiles.final));
+  const width = Number(process.env[preview ? 'PREVIEW_WIDTH' : 'FINAL_WIDTH'] ?? (preview ? profiles.preview : profiles.hd));
   const concurrency = Number(process.env.RENDER_CONCURRENCY ?? Math.min(width >= 1080 ? 2 : 3, availableParallelism()));
   const samples = Number(process.env.RENDER_MSAA ?? (width >= 1080 ? 4 : 0));
   if (!supportedWidths.includes(width)) throw new Error(`Render width must be one of ${supportedWidths.join(', ')}`);
