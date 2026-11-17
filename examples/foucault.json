@@ -861,27 +861,32 @@
         "mechanism"
       ],
       "scene": "model",
-      "visual": "A close-up isolates the dial. The visitor shrugs, then the camera snaps down toward the markings.",
+      "visual": "The visitor shrugs. On the reveal, the camera tilts toward the model floor as its stripe turns.",
       "camera": {
         "from": [
-          0.82,
-          2.34,
-          5.2
+          -0.3,
+          2.95,
+          5.3
         ],
         "to": [
-          0.32,
-          2.45,
-          4.45
+          0.1,
+          2.88,
+          4.9
         ],
         "look": [
-          -0.18,
-          0.94,
-          -0.08
+          0.3,
+          1.05,
+          -0.1
         ],
-        "fov": 49,
-        "blur": 10,
+        "lookTo": [
+          0.48,
+          1.04,
+          -0.12
+        ],
+        "fov": 56,
+        "blur": 8,
         "motion": "whip",
-        "emphasis": 10,
+        "emphasis": 16,
         "roll": 4
       },
       "actions": [
@@ -893,8 +898,8 @@
         },
         {
           "kind": "spin",
-          "target": "gear",
-          "word": 14,
+          "target": "disc",
+          "word": 16,
           "duration": 2.0,
           "amount": 86
         }
@@ -907,7 +912,7 @@
         },
         {
           "kind": "machine",
-          "word": 14,
+          "word": 16,
           "gain": 0.3
         }
       ],

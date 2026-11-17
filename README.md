@@ -45,4 +45,4 @@ The audio command generates a mix and timing fixture without opening Chromium. U
 
 Story research and writing happen outside GitHub Actions. See [story intake](docs/story-intake.md) for the scheduled-task handoff and manual submission. See [YouTube setup](docs/youtube.md) for OAuth and private uploads. Uploading and public release each have an explicit opt-in.
 
-See [architecture](docs/architecture.md) for the asset vocabulary, timing, reviewers, repair behavior, and runner settings. Adapted rendering code comes from [Mr omi's MIT-licensed reference](https://github.com/mromidev/claude-animated-shorts). The [attribution](docs/attribution.md) identifies the reused files.
+See [architecture](docs/architecture.md) for the asset vocabulary, timing, reviewers, repair behavior, and runner settings. See [Phase 2 verification](docs/phase-2-verification.md) for measured results. Adapted rendering code comes from [Mr omi's MIT-licensed reference](https://github.com/mromidev/claude-animated-shorts). The [attribution](docs/attribution.md) identifies the reused files.
