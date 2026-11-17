@@ -1,0 +1,38 @@
+{
+  "name": "yt-auto",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "validate": "tsx scripts/validate.ts",
+    "preview": "tsx scripts/produce.ts --preview",
+    "render": "tsx scripts/produce.ts",
+    "qa": "tsx scripts/qa.ts",
+    "queue": "tsx scripts/queue.ts",
+    "youtube:auth": "tsx scripts/youtube-auth.ts",
+    "youtube:upload": "tsx scripts/queue.ts finish",
+    "audio": "tsx scripts/audio.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.544",
+    "@remotion/renderer": "4.0.544",
+    "postprocessing": "6.39.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.544",
+    "three": "0.179.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.179.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,57 @@
+import {fps, wordsOf, type Beat, type Scene, type Story} from './schema';
+
+export type Word = {word: string; start: number; end: number};
+export type Alignment = {duration: number; words: Word[]; provider: string};
+export type Shot = {
+  start: number;
+  end: number;
+  beat: Beat;
+  scene: Scene;
+  emphasis: number;
+  actions: (Beat['actions'][number] & {frame: number})[];
+  sounds: (Beat['sounds'][number] & {frame: number})[];
+};
+export type Film = {story: Story; shots: Shot[]; frames: number};
+
+export function verifyAlignment(story: Story, alignment: Alignment) {
+  const expected = wordsOf(story.narration);
+  if (!Number.isFinite(alignment.duration) || alignment.duration < 55 || alignment.duration > 70) {
+    throw new Error(`Voice duration must be 55–70 seconds, received ${alignment.duration}`);
+  }
+  if (!Array.isArray(alignment.words) || expected.length !== alignment.words.length) {
+    throw new Error('Word alignment does not cover the narration');
+  }
+  let previous = 0;
+  alignment.words.forEach(({word, start, end}, i) => {
+    if (typeof word !== 'string' || word.toLowerCase() !== expected[i].toLowerCase() ||
+        !Number.isFinite(start) || !Number.isFinite(end) || start < previous - 0.008 ||
+        end <= start || end > alignment.duration + 0.01 || start - previous > 1.3) {
+      throw new Error(`Invalid or missing timing for narration word ${i}: ${expected[i]}`);
+    }
+    previous = end;
+  });
+  if (alignment.duration - previous > 1.4) throw new Error('Voice alignment ends too early');
+  return alignment;
+}
+
+export function compile(story: Story, alignment: Alignment): Film {
+  verifyAlignment(story, alignment);
+  const frames = Math.ceil(alignment.duration * fps);
+  let offset = 0;
+  const shots = story.beats.map((beat, i): Shot => {
+    const count = wordsOf(beat.text).length;
+    const at = (word: number) => Math.round(alignment.words[offset + word].start * fps);
+    const start = i ? at(0) : 0;
+    const end = offset + count === alignment.words.length ? frames : at(count);
+    if (end - start < 12) throw new Error(`Beat ${i + 1} is too short to stage`);
+    const shot = {
+      start, end, beat, scene: story.scenes.find((scene) => scene.id === beat.scene)!,
+      emphasis: beat.camera.emphasis === undefined ? -1 : at(beat.camera.emphasis),
+      actions: beat.actions.map((action) => ({...action, frame: Math.max(start, at(action.word) - 1)})),
+      sounds: beat.sounds.map((sound) => ({...sound, frame: at(sound.word)}))
+    };
+    offset += count;
+    return shot;
+  });
+  return {story, shots, frames};
+}

@@ -1,0 +1,111 @@
+name: Story production
+
+on:
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number (0 drains the first eligible ready issue)
+        type: number
+        default: 0
+      retry:
+        description: Retry an unchanged issue before the upload barrier
+        type: boolean
+        default: false
+
+concurrency:
+  group: story-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  production:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'issues' ||
+      (github.event.label.name == 'story-ready' &&
+      contains(format(',{0},', vars.STORY_TRUSTED_AUTHORS || 'Jyozaa'), format(',{0},', github.event.issue.user.login))))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 115
+    env:
+      STORY_TRUSTED_AUTHORS: ${{ vars.STORY_TRUSTED_AUTHORS || 'Jyozaa' }}
+      STORY_ISSUE: ${{ github.event.issue.number || inputs.issue || '0' }}
+      STORY_RETRY: ${{ inputs.retry || 'false' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Claim and validate one story
+        id: take
+        run: npm run queue -- claim
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        if: steps.take.outputs.claimed == 'true'
+        with:
+          python-version: '3.12'
+      - name: Install render dependencies
+        if: steps.take.outputs.claimed == 'true'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng libnss3 libgbm1 libasound2t64
+      - name: Render and check story
+        if: steps.take.outputs.claimed == 'true'
+        run: npm run queue -- render
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TTS_PROVIDER: ${{ vars.TTS_PROVIDER || 'local' }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
+          VISION_ENDPOINT: ${{ vars.VISION_ENDPOINT }}
+          VISION_API_KEY: ${{ secrets.VISION_API_KEY }}
+          REMOTION_TMP: ${{ runner.temp }}/yt-auto
+          FINAL_WIDTH: ${{ vars.FINAL_WIDTH || '1440' }}
+          RENDER_CONCURRENCY: ${{ vars.RENDER_CONCURRENCY || '2' }}
+          RENDER_MSAA: ${{ vars.RENDER_MSAA || '4' }}
+          QA_REPAIR_ATTEMPTS: ${{ vars.QA_REPAIR_ATTEMPTS || '1' }}
+      - name: Save render diagnostics
+        if: ${{ always() && steps.take.outputs.claimed == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/queue/words.json
+            out/queue/storyboard.json
+            out/queue/qa/
+            out/queue/repair-*/comparison.json
+            out/queue/repair-*/qa/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Save approved video
+        if: steps.take.outputs.claimed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: short-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/queue-delivery/short.mp4
+          if-no-files-found: error
+          retention-days: 30
+      - name: Finish and optionally upload
+        if: steps.take.outputs.claimed == 'true'
+        run: npm run queue -- finish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          YOUTUBE_UPLOAD_ENABLED: ${{ vars.YOUTUBE_UPLOAD_ENABLED || 'false' }}
+          YOUTUBE_ALLOW_PUBLIC: ${{ vars.YOUTUBE_ALLOW_PUBLIC || 'false' }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      - name: Record production failure
+        if: ${{ failure() && steps.take.outputs.claimed == 'true' }}
+        run: npm run queue -- fail
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
