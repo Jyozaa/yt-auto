@@ -21,7 +21,7 @@ function add(character: Story['characters'][number], duration: number, view: 'fr
       character: character.id, view, look: 'neutral'}]
   };
   const camera: Shot['beat']['camera'] = movement ?
-    {from: [0, 1.6, 6.1], to: [.05, 1.61, 6.15], look: [0, .93, 0], motion: 'glide', fov: 52, blur: 0, roll: 0} :
+    {from: [0, 1.6, 6.7], to: [.05, 1.61, 6.75], look: [0, .93, 0], motion: 'glide', fov: 52, blur: 0, roll: 0} :
     {from: [.02, 1.52, 2.15], to: [.05, 1.49, 2.12], look: [0, character.height * .76, 0], motion: 'push', fov: 38, blur: 0, roll: 0};
   const shot: Shot = {start: frames, end: frames + duration, scene, emphasis: -1, sounds: [], actions: [],
     beat: {...story.beats[0], scene: scene.id, camera, events: undefined, acting: undefined, actions: [], sounds: []}};
@@ -48,7 +48,7 @@ face.faces = studyExpressions.map((expression, i) => {
   const frame = face.start + i * 22;
   expressions.push({expression, frame: frame + 12});
   return {actor: lead.id, expression, frame, word: 0, duration: 22 / 30, length: 22,
-    blink: 'blink', eyes: [i % 2 ? -.54 : .62, i < 4 ? .46 : -.2], tilt: [-5, 9, -9, 3][i % 4]};
+    blink: 'open', eyes: [i % 2 ? -.54 : .62, i < 4 ? .46 : -.2], tilt: [-5, 9, -9, 3][i % 4]};
 });
 const walk = add(lead, 84, 'side', 'walk');
 const run = add(lead, 78, 'side', 'run');

@@ -14,9 +14,10 @@ The new [Lake Peigneur story](../examples/lake-peigneur-1980.json) has nine beat
 | `evidence/vortex-and-vessels-5s.mp4` | Five seconds of a growing vortex. The barges move inward, the platform leans, and the derrick continues sinking across a cut. |
 | `evidence/mine-evacuation.mp4` | Three miners run ahead of the advancing flood. The camera tracks the front runner to the raised exit. |
 | `evidence/causal-sequence.mp4`, `evidence/causal-frames.jpg` | Jam, reaction, structural failure, persistent loss of the rig, and underground flooding. |
+| `evidence/source-style-comparison.jpg`, `evidence/deck-lighting-comparison.jpg` | Source bridge baseline beside the cast studies, plus a matched frame before and after the deck lighting adjustment. |
 | `evidence/canal.mp4` | Foam reverses direction and accelerates down the canal into the basin. |
 
-The first visual review found the basin floor showing through the deepest part of the vortex, shallow framing of the mine, and checkered deck shadows. The later pass deepened the basin, added a tunnel ceiling and advancing flood front, and relit the deck. Direct frame inspection confirmed the vortex stays visibly hollow, the rig remains submerged in the return shot, and the mine water reaches the front of the tunnel behind the crew. The cutaway and water use stylized shapes, the shoreline has a limited tree vocabulary, and the orbiting barges can visually crowd one another. The boats and debris follow authored paths, with limited collision geometry. Walk and run retain the source's flat cards and can still look light on contact at some angles.
+The first visual review found the basin floor showing through the deepest part of the vortex, shallow framing of the mine, and checkered deck shadows. The later pass deepened the basin, added a tunnel ceiling and advancing flood front, and relit the deck. Direct frame inspection confirmed the vortex stays visibly hollow, the rig remains submerged in the return shot, and the mine water reaches the front of the tunnel behind the crew. The cutaway and water use stylized shapes, the shoreline has a limited tree vocabulary, and the orbiting barges can visually crowd one another. Some deck shadow stippling remains in close-ups. The boats and debris follow authored paths, with limited collision geometry. Walk and run retain the source's flat cards and can still look light on contact at some angles.
 
 ## Voice and audio
 
@@ -49,4 +50,14 @@ npm run audio -- examples/lake-peigneur-1980.json out/phase4/final-audio --event
 npx tsx scripts/acting-study.ts examples/lake-peigneur-1980.json out/phase4/acting-study.json
 ```
 
-The 1080 × 1920 master uses H.264 with AAC at 30 fps. The 1440 × 2560 render also completed and passed technical QA. Automated QA checks frame count, motion, exposure, flashes, silence, clicks, loudness and true peak. Use `final-1080/qa/contact-sheet.jpg` and `evidence/causal-frames.jpg` for visual inspection. No semantic vision endpoint was configured. The report records automated measurements. Frame inspection and audio evaluation have their own evidence above. GitHub preview runs save QA reports on the public repository. The video and frame images remain local. YouTube uploading remains opt-in.
+Both Lake Peigneur masters use H.264 with AAC at 30 fps. Automated QA checks frame count, motion, exposure, flashes, silence, clicks, loudness and true peak.
+
+| Local render | Decoded frames | Duration | Loudness | True peak | QA |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Lake Peigneur 1080 × 1920 | 2,088 | 69.60 s | −14.5 LUFS | −1.6 dBTP | Pass |
+| Lake Peigneur 1440 × 2560 | 2,088 | 69.60 s | −14.5 LUFS | −1.7 dBTP | Pass |
+| Foucault 360 × 640 preview | 450 | 15.00 s | −14.9 LUFS | −1.7 dBTP | Pass |
+
+The machinery and vortex excerpts each contain 150 decoded frames. Their mean frame-to-frame luma deltas are 2.377 and 5.547 on the QA pipeline's 8-bit scale. The measurements include camera motion. The causal frame grid shows the moving components directly.
+
+Use `final-1080/qa/contact-sheet.jpg` and `evidence/causal-frames.jpg` for visual inspection. No semantic vision endpoint was configured. The report records automated measurements. Frame inspection and audio evaluation have their own evidence above. GitHub preview runs save QA reports on the public repository. The video and frame images remain local. YouTube uploading remains opt-in.
