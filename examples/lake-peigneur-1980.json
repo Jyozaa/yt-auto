@@ -1,0 +1,1652 @@
+{
+  "version": 2,
+  "id": "lake-peigneur-1980-test",
+  "title": "The Lake That Went Down the Drain",
+  "youtubeTitle": "The Lake That Went Down the Drain",
+  "topic": "history",
+  "summary": "In November 1980, Lake Peigneur drained into the Jefferson Island salt mine. The workers escaped and a canal reversed into the basin. The workers in the animation are fictional composites.",
+  "narrative": {
+    "premise": "An entire Louisiana lake goes down a hole in its own floor.",
+    "stakes": "A drilling crew and underground miners have to escape while their work sites flood and collapse.",
+    "mechanism": "Drilling appears to have connected water to the mine, and the collapsing ground widened the opening.",
+    "analogy": "A bathtub plug is pulled, except the bathtub is a lake and the drain leads to a mine.",
+    "callback": "Return to the quiet lake from the opening, now refilled, after the oil drill changed its plumbing."
+  },
+  "duration": 55,
+  "delivery": "connected",
+  "sources": [
+    {
+      "id": "msha",
+      "title": "MSHA, Jefferson Island Mine Inundation investigation",
+      "url": "https://usminedisasters.miningquiz.com/saxsewell/1980_jefferson_island.pdf",
+      "kind": "primary"
+    },
+    {
+      "id": "louisiana",
+      "title": "University of Louisiana at Lafayette, Lake Peigneur retrospective",
+      "url": "https://library.louisiana.edu/news-events/news/20221118/fun-fact-friday-special-collections",
+      "kind": "institutional"
+    },
+    {
+      "id": "upi",
+      "title": "UPI reporting on the loss of the drilling platform, 21 November 1980",
+      "url": "https://www.upi.com/Archives/1980/11/21/Drilling-rig-breaks-into-salt-mine-cavity-draining-lake/6665343630800/",
+      "kind": "secondary"
+    },
+    {
+      "id": "location",
+      "title": "UPI reporting on the disputed drilling location, 22 November 1980",
+      "url": "https://www.upi.com/Archives/1980/11/22/Texaco-says-its-oil-rig-was-in-right-place/2760343717200/",
+      "kind": "secondary"
+    }
+  ],
+  "claims": [
+    {
+      "id": "lake-drained",
+      "text": "Lake Peigneur in Louisiana drained into the underlying Jefferson Island salt mine.",
+      "risk": "high",
+      "sources": [
+        "msha",
+        "louisiana"
+      ]
+    },
+    {
+      "id": "work",
+      "text": "On November 20, 1980, drilling at the lake and mining underground were underway at the same time.",
+      "risk": "high",
+      "sources": [
+        "msha",
+        "louisiana"
+      ]
+    },
+    {
+      "id": "platform",
+      "text": "The drilling platform was lost. The drilling crew evacuated.",
+      "risk": "high",
+      "sources": [
+        "msha",
+        "upi"
+      ]
+    },
+    {
+      "id": "vortex",
+      "text": "A whirlpool drew in barges and parts of the shoreline.",
+      "risk": "high",
+      "sources": [
+        "louisiana",
+        "upi"
+      ]
+    },
+    {
+      "id": "evacuation",
+      "text": "The underground miners escaped the flooding without loss of life.",
+      "risk": "high",
+      "sources": [
+        "msha",
+        "louisiana"
+      ]
+    },
+    {
+      "id": "opening",
+      "text": "Drilling and the mine inundation were linked, but the exact opening mechanism and drilling-location claims remain uncertain.",
+      "risk": "high",
+      "sources": [
+        "msha",
+        "location"
+      ]
+    },
+    {
+      "id": "reversal",
+      "text": "The canal reversed as Lake Peigneur drained. The refilled lake was deeper and saltier.",
+      "risk": "high",
+      "sources": [
+        "louisiana",
+        "upi"
+      ]
+    }
+  ],
+  "narration": "One morning, an entire Louisiana lake disappeared down a hole in its own floor. It's November 1980 at Lake Peigneur. A crew drills for oil. Below, miners work a salt mine. First, the drill gets stuck. Then the platform shakes and tilts. The workers scramble off, and the lake starts spinning where their rig stood. The whirlpool grows, pulling in the drilling platform. Barges slide inward. Trees and pieces of shore follow. Meanwhile, underground, miners race for the exit as water floods the tunnels. They escape, but the lake above is still vanishing. The strangest part? Nobody knew this drain existed. Where does the water go? You see, beneath the lake is a network of salt-mine passages. Drilling appears to have opened a route into the mine. Water rushed in, and the ground collapsed, widening the opening. Imagine pulling a bathtub plug, except the bathtub is a lake and the drain is a mine. Then a coastal canal starts flowing backward. Water pours into the basin. The lake fills again, deeper and saltier. The drillers went looking for oil. The lake found a way to change its entire plumbing.",
+  "characters": [
+    {
+      "id": "rene",
+      "description": "Fictional composite worker with side-part hair and period-inspired work clothes.",
+      "skin": "#c58863",
+      "hair": "#35282e",
+      "coat": "#d18a35",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.77,
+      "build": "adult",
+      "hairStyle": "side-part",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    },
+    {
+      "id": "ellis",
+      "description": "Fictional composite worker with messy hair and period-inspired work clothes.",
+      "skin": "#8e543e",
+      "hair": "#292430",
+      "coat": "#43869b",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.62,
+      "build": "stout",
+      "hairStyle": "messy",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    },
+    {
+      "id": "jules",
+      "description": "Fictional composite worker with slicked-back hair and period-inspired work clothes.",
+      "skin": "#e7ad80",
+      "hair": "#452d30",
+      "coat": "#a85841",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.77,
+      "build": "adult",
+      "hairStyle": "slicked-back",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    },
+    {
+      "id": "alma",
+      "description": "Fictional composite worker with curly hair and period-inspired work clothes.",
+      "skin": "#623c34",
+      "hair": "#302233",
+      "coat": "#c29d43",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.77,
+      "build": "adult",
+      "hairStyle": "curly",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    },
+    {
+      "id": "bea",
+      "description": "Fictional composite worker with long hair and period-inspired work clothes.",
+      "skin": "#dfac89",
+      "hair": "#714036",
+      "coat": "#86576e",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.77,
+      "build": "adult",
+      "hairStyle": "long",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    },
+    {
+      "id": "marie",
+      "description": "Fictional composite worker with tied-back hair and period-inspired work clothes.",
+      "skin": "#a97052",
+      "hair": "#3d293b",
+      "coat": "#468681",
+      "trousers": "#465262",
+      "outfit": "workcoat",
+      "height": 1.62,
+      "build": "stout",
+      "hairStyle": "tied-back",
+      "belt": "#6e4d42",
+      "buttons": "#d2b889"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "establish",
+      "environment": "lake",
+      "description": "Oil derrick on a wide Louisiana lake, with quiet cypress banks and a slight ripple.",
+      "actors": [],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "grain-barge",
+          "kind": "barge",
+          "at": [
+            6,
+            0,
+            -4
+          ],
+          "yaw": 42,
+          "scale": 1.1
+        },
+        {
+          "id": "spare-barge",
+          "kind": "barge",
+          "at": [
+            -4.5,
+            0,
+            -6.3
+          ],
+          "yaw": -28,
+          "scale": 0.97
+        },
+        {
+          "id": "workboat",
+          "kind": "skiff",
+          "at": [
+            -2.7,
+            0,
+            2.4
+          ],
+          "yaw": 25,
+          "scale": 0.8
+        }
+      ],
+      "light": "day"
+    },
+    {
+      "id": "work-deck",
+      "environment": "lake",
+      "description": "A crew tends the exposed rotary machinery on the working derrick.",
+      "actors": [
+        {
+          "id": "rene",
+          "character": "rene",
+          "at": [
+            -0.68,
+            0.76,
+            1.18
+          ],
+          "facing": "right",
+          "look": "concentrate",
+          "view": "three-quarter"
+        },
+        {
+          "id": "ellis",
+          "character": "ellis",
+          "at": [
+            1.22,
+            0.76,
+            1.05
+          ],
+          "facing": "left",
+          "look": "neutral",
+          "view": "three-quarter"
+        }
+      ],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "grain-barge",
+          "kind": "barge",
+          "at": [
+            6,
+            0,
+            -4
+          ],
+          "yaw": 42,
+          "scale": 1.1
+        },
+        {
+          "id": "spare-barge",
+          "kind": "barge",
+          "at": [
+            -4.5,
+            0,
+            -6.3
+          ],
+          "yaw": -28,
+          "scale": 0.97
+        },
+        {
+          "id": "workboat",
+          "kind": "skiff",
+          "at": [
+            -2.7,
+            0,
+            2.4
+          ],
+          "yaw": 25,
+          "scale": 0.8
+        }
+      ],
+      "light": "golden"
+    },
+    {
+      "id": "jammed-deck",
+      "environment": "lake",
+      "description": "The rotary table binds. A tool case falls from the deck and the crew retreats toward the workboat.",
+      "actors": [
+        {
+          "id": "rene",
+          "character": "rene",
+          "at": [
+            -0.68,
+            0.76,
+            1.18
+          ],
+          "facing": "right",
+          "look": "concentrate",
+          "view": "three-quarter"
+        },
+        {
+          "id": "ellis",
+          "character": "ellis",
+          "at": [
+            1.22,
+            0.76,
+            1.05
+          ],
+          "facing": "left",
+          "look": "neutral",
+          "view": "three-quarter"
+        }
+      ],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "grain-barge",
+          "kind": "barge",
+          "at": [
+            6,
+            0,
+            -4
+          ],
+          "yaw": 42,
+          "scale": 1.1
+        },
+        {
+          "id": "spare-barge",
+          "kind": "barge",
+          "at": [
+            -4.5,
+            0,
+            -6.3
+          ],
+          "yaw": -28,
+          "scale": 0.97
+        },
+        {
+          "id": "workboat",
+          "kind": "skiff",
+          "at": [
+            -2.7,
+            0,
+            2.4
+          ],
+          "yaw": 25,
+          "scale": 0.8
+        },
+        {
+          "id": "tool-case",
+          "kind": "crate",
+          "at": [
+            -1.8,
+            0.76,
+            1.98
+          ],
+          "yaw": 12,
+          "scale": 0.48
+        }
+      ],
+      "light": "golden"
+    },
+    {
+      "id": "vortex",
+      "environment": "lake",
+      "description": "A growing vortex pulls the failing platform, barges and cypress trees inward.",
+      "actors": [],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "grain-barge",
+          "kind": "barge",
+          "at": [
+            6,
+            0,
+            -4
+          ],
+          "yaw": 42,
+          "scale": 1.1
+        },
+        {
+          "id": "spare-barge",
+          "kind": "barge",
+          "at": [
+            -4.5,
+            0,
+            -6.3
+          ],
+          "yaw": -28,
+          "scale": 0.97
+        },
+        {
+          "id": "workboat",
+          "kind": "skiff",
+          "at": [
+            -2.7,
+            0,
+            2.4
+          ],
+          "yaw": 25,
+          "scale": 0.8
+        },
+        {
+          "id": "tipping-cypress",
+          "kind": "shore-tree",
+          "at": [
+            -6,
+            0,
+            -5
+          ],
+          "yaw": 0,
+          "scale": 1.1
+        },
+        {
+          "id": "shore-cypress",
+          "kind": "shore-tree",
+          "at": [
+            7.4,
+            0,
+            -4.7
+          ],
+          "yaw": 91,
+          "scale": 0.82
+        }
+      ],
+      "light": "day"
+    },
+    {
+      "id": "evacuation",
+      "environment": "mine",
+      "description": "Amber lamps, pale pillars and timber ribs frame an escape from a flood entering the mine.",
+      "actors": [
+        {
+          "id": "alma",
+          "character": "alma",
+          "at": [
+            -0.65,
+            0,
+            -3.3
+          ],
+          "facing": "right",
+          "look": "concern",
+          "view": "three-quarter"
+        },
+        {
+          "id": "bea",
+          "character": "bea",
+          "at": [
+            1.0,
+            0,
+            -4.9
+          ],
+          "facing": "right",
+          "look": "neutral",
+          "view": "auto"
+        },
+        {
+          "id": "marie",
+          "character": "marie",
+          "at": [
+            0.05,
+            0,
+            -6.2
+          ],
+          "facing": "right",
+          "look": "concern",
+          "view": "auto"
+        }
+      ],
+      "props": [],
+      "light": "day"
+    },
+    {
+      "id": "lost-platform",
+      "environment": "lake",
+      "description": "Return to the same basin after the failure, with exposed banks and drifting wreckage.",
+      "actors": [],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "grain-barge",
+          "kind": "barge",
+          "at": [
+            6,
+            0,
+            -4
+          ],
+          "yaw": 42,
+          "scale": 1.1
+        },
+        {
+          "id": "spare-barge",
+          "kind": "barge",
+          "at": [
+            -4.5,
+            0,
+            -6.3
+          ],
+          "yaw": -28,
+          "scale": 0.97
+        },
+        {
+          "id": "workboat",
+          "kind": "skiff",
+          "at": [
+            -2.7,
+            0,
+            2.4
+          ],
+          "yaw": 25,
+          "scale": 0.8
+        },
+        {
+          "id": "tipping-cypress",
+          "kind": "shore-tree",
+          "at": [
+            -6,
+            0,
+            -5
+          ],
+          "yaw": 0,
+          "scale": 1.1
+        },
+        {
+          "id": "shore-cypress",
+          "kind": "shore-tree",
+          "at": [
+            7.4,
+            0,
+            -4.7
+          ],
+          "yaw": 91,
+          "scale": 0.82
+        }
+      ],
+      "light": "day"
+    },
+    {
+      "id": "drain-section",
+      "environment": "cross-section",
+      "description": "Oblique cutaway through the water, soil, and dark branching mine galleries.",
+      "actors": [],
+      "props": [],
+      "light": "day"
+    },
+    {
+      "id": "reverse-canal",
+      "environment": "canal",
+      "description": "A coastal canal reverses into the low basin and pours downslope in a broad waterfall.",
+      "actors": [],
+      "props": [],
+      "light": "day"
+    },
+    {
+      "id": "refilled",
+      "environment": "lake",
+      "description": "The settled, refilled basin seen from the opening angle. The derrick is gone.",
+      "actors": [],
+      "props": [
+        {
+          "id": "platform",
+          "kind": "rig",
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "yaw": 0,
+          "scale": 1
+        },
+        {
+          "id": "passing-skiff",
+          "kind": "skiff",
+          "at": [
+            2.2,
+            0,
+            -4
+          ],
+          "yaw": 55,
+          "scale": 0.8
+        }
+      ],
+      "light": "day"
+    }
+  ],
+  "beats": [
+    {
+      "role": "hook",
+      "text": "One morning, an entire Louisiana lake disappeared down a hole in its own floor.",
+      "claims": [
+        "lake-drained"
+      ],
+      "visual": "Open on the lake from waterside, then reveal the small spinning disturbance beside the intact rig.",
+      "scene": "establish",
+      "camera": {
+        "to": [
+          8,
+          5.8,
+          12
+        ],
+        "look": [
+          0,
+          1,
+          0
+        ],
+        "fov": 47,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          10,
+          6.7,
+          14
+        ]
+      },
+      "actions": [],
+      "sounds": [],
+      "events": [
+        {
+          "id": "first-ripple",
+          "kind": "eddy",
+          "word": 0,
+          "duration": 5,
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "amount": 0.26
+        }
+      ]
+    },
+    {
+      "role": "setting",
+      "text": "It's November 1980 at Lake Peigneur. A crew drills for oil. Below, miners work a salt mine.",
+      "claims": [
+        "work"
+      ],
+      "visual": "Hold on the rotating drill and tense crew, then ease toward the worker monitoring the equipment.",
+      "scene": "work-deck",
+      "camera": {
+        "to": [
+          2.5,
+          2.21,
+          5.9
+        ],
+        "look": [
+          0.02,
+          1.37,
+          0.52
+        ],
+        "fov": 43,
+        "blur": 1.4,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          3.25,
+          2.4,
+          6.5
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              3.25,
+              2.4,
+              6.5
+            ],
+            "look": [
+              0.02,
+              1.37,
+              0.52
+            ],
+            "glide": 38
+          },
+          {
+            "word": 11,
+            "position": [
+              2.2,
+              2.33,
+              5.1
+            ],
+            "look": [
+              0.05,
+              1.46,
+              0.72
+            ],
+            "glide": 37
+          }
+        ]
+      },
+      "actions": [],
+      "sounds": [],
+      "events": [
+        {
+          "id": "rotary-table",
+          "kind": "motor",
+          "word": 0,
+          "duration": 12,
+          "at": [
+            0,
+            1.2,
+            0.7
+          ],
+          "amount": 1
+        }
+      ],
+      "acting": {
+        "version": 1,
+        "cues": [
+          {
+            "actor": "rene",
+            "word": 0,
+            "expression": "concentrate",
+            "duration": 6,
+            "eyes": [
+              0.58,
+              0.7
+            ],
+            "tilt": 7,
+            "brow": "knit",
+            "mouth": "dash"
+          },
+          {
+            "actor": "rene",
+            "word": 11,
+            "expression": "curious",
+            "duration": 2,
+            "eyes": [
+              0.58,
+              -0.14
+            ],
+            "tilt": -4,
+            "blink": "blink"
+          },
+          {
+            "actor": "ellis",
+            "word": 6,
+            "expression": "neutral",
+            "duration": 4,
+            "eyes": [
+              -0.64,
+              0.47
+            ],
+            "brow": "level"
+          }
+        ]
+      }
+    },
+    {
+      "role": "escalation",
+      "text": "First, the drill gets stuck. Then the platform shakes and tilts. The workers scramble off, and the lake starts spinning where their rig stood.",
+      "claims": [
+        "platform"
+      ],
+      "visual": "Start on the watching worker and drill. Hold long enough for recognition, vibration and retreat to read.",
+      "scene": "jammed-deck",
+      "camera": {
+        "to": [
+          -2.4,
+          2.24,
+          4.56
+        ],
+        "look": [
+          -0.22,
+          1.53,
+          0.65
+        ],
+        "fov": 43,
+        "blur": 1.4,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          -2.44,
+          2.0,
+          4.04
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              -2.44,
+              2,
+              4.04
+            ],
+            "look": [
+              -0.22,
+              1.64,
+              0.65
+            ],
+            "glide": 28
+          },
+          {
+            "word": 3,
+            "position": [
+              -1.83,
+              2.43,
+              3.4
+            ],
+            "look": [
+              0.06,
+              1.37,
+              0.33
+            ],
+            "glide": 21
+          },
+          {
+            "word": 7,
+            "position": [
+              -2.54,
+              2.13,
+              3.95
+            ],
+            "look": [
+              -0.19,
+              1.53,
+              0.83
+            ],
+            "glide": 20
+          },
+          {
+            "word": 12,
+            "position": [
+              -3.4,
+              2.8,
+              6.2
+            ],
+            "look": [
+              -0.45,
+              1.45,
+              0.65
+            ],
+            "glide": 32
+          }
+        ]
+      },
+      "actions": [
+        {
+          "kind": "inspect",
+          "target": "rene",
+          "word": 3,
+          "duration": 1.25
+        },
+        {
+          "kind": "flinch",
+          "target": "ellis",
+          "word": 7,
+          "duration": 1.08
+        },
+        {
+          "kind": "drop",
+          "target": "tool-case",
+          "word": 7,
+          "duration": 0.57,
+          "to": [
+            -2.53,
+            0.11,
+            2.35
+          ]
+        },
+        {
+          "kind": "run",
+          "target": "ellis",
+          "word": 10,
+          "duration": 1.8,
+          "to": [
+            2.25,
+            0.76,
+            2.05
+          ]
+        },
+        {
+          "kind": "run",
+          "target": "rene",
+          "word": 12,
+          "duration": 1.9,
+          "to": [
+            -2.25,
+            0.76,
+            2.15
+          ]
+        },
+        {
+          "kind": "run",
+          "target": "rene",
+          "word": 15,
+          "duration": 1.03,
+          "to": [
+            -2.64,
+            0.48,
+            2.41
+          ]
+        }
+      ],
+      "sounds": [],
+      "events": [
+        {
+          "id": "drill-binds",
+          "kind": "bind",
+          "word": 3,
+          "duration": 2.05,
+          "at": [
+            0,
+            1.1,
+            0.7
+          ],
+          "amount": 1
+        },
+        {
+          "id": "vortex-forming",
+          "kind": "drain",
+          "word": 18,
+          "duration": 5.8,
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "amount": 1
+        }
+      ],
+      "acting": {
+        "version": 1,
+        "cues": [
+          {
+            "actor": "rene",
+            "word": 0,
+            "expression": "concentrate",
+            "duration": 1.8,
+            "eyes": [
+              0.7,
+              0.78
+            ],
+            "tilt": 8,
+            "brow": "knit"
+          },
+          {
+            "actor": "rene",
+            "word": 3,
+            "expression": "confused",
+            "duration": 1.45,
+            "eyes": [
+              0.85,
+              0.9
+            ],
+            "tilt": 13,
+            "brow": "skeptical",
+            "mouth": "wave",
+            "blink": "blink"
+          },
+          {
+            "actor": "rene",
+            "word": 7,
+            "expression": "shock",
+            "duration": 1.5,
+            "eyes": [
+              0.95,
+              -0.35
+            ],
+            "turn": 1,
+            "tilt": -13,
+            "brow": "raised",
+            "mouth": "O"
+          },
+          {
+            "actor": "rene",
+            "word": 12,
+            "expression": "fear",
+            "duration": 2.5,
+            "eyes": [
+              -0.85,
+              0.1
+            ],
+            "turn": -1,
+            "tilt": 6,
+            "brow": "worried",
+            "mouth": "teeth"
+          },
+          {
+            "actor": "ellis",
+            "word": 3,
+            "expression": "doubt",
+            "duration": 1.75,
+            "eyes": [
+              -0.85,
+              0.55
+            ],
+            "tilt": -8,
+            "brow": "skeptical"
+          },
+          {
+            "actor": "ellis",
+            "word": 7,
+            "expression": "disbelief",
+            "duration": 1.35,
+            "eyes": [
+              -0.9,
+              -0.35
+            ],
+            "tilt": -12,
+            "brow": "raised",
+            "mouth": "o"
+          },
+          {
+            "actor": "ellis",
+            "word": 12,
+            "expression": "concern",
+            "duration": 2.5,
+            "eyes": [
+              -0.85,
+              0
+            ],
+            "turn": -1,
+            "brow": "worried"
+          }
+        ]
+      }
+    },
+    {
+      "role": "escalation",
+      "text": "The whirlpool grows, pulling in the drilling platform. Barges slide inward. Trees and pieces of shore follow.",
+      "claims": [
+        "platform",
+        "vortex"
+      ],
+      "visual": "Glide from surface level to a high angle over the active vortex, then cut closer while the barges slide and the rig drops.",
+      "scene": "vortex",
+      "camera": {
+        "to": [
+          4,
+          13,
+          10
+        ],
+        "look": [
+          0,
+          -0.26,
+          -0.7
+        ],
+        "fov": 55,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          5,
+          6.6,
+          10
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              5,
+              6.6,
+              10
+            ],
+            "look": [
+              0,
+              -0.3,
+              -0.7
+            ],
+            "glide": 37
+          },
+          {
+            "word": 3,
+            "position": [
+              4.7,
+              11.5,
+              8.85
+            ],
+            "look": [
+              0,
+              -0.55,
+              -1.05
+            ],
+            "glide": 38
+          },
+          {
+            "word": 8,
+            "position": [
+              5.8,
+              7.7,
+              8.2
+            ],
+            "look": [
+              -0.6,
+              -0.85,
+              -0.8
+            ],
+            "cut": true,
+            "glide": 38
+          },
+          {
+            "word": 11,
+            "position": [
+              4.5,
+              8.5,
+              9.6
+            ],
+            "look": [
+              -0.2,
+              -1.33,
+              -0.8
+            ],
+            "glide": 35
+          }
+        ]
+      },
+      "actions": [],
+      "sounds": [],
+      "events": [
+        {
+          "id": "derrick-fails",
+          "kind": "collapse",
+          "word": 6,
+          "duration": 3.8,
+          "at": [
+            0,
+            1,
+            0
+          ],
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "role": "escalation",
+      "text": "Meanwhile, underground, miners race for the exit as water floods the tunnels. They escape, but the lake above is still vanishing.",
+      "claims": [
+        "evacuation",
+        "lake-drained"
+      ],
+      "visual": "Begin at mine level with miners and flood behind them. Track their flight toward higher ground.",
+      "scene": "evacuation",
+      "camera": {
+        "to": [
+          0.35,
+          2.3,
+          6.1
+        ],
+        "look": [
+          0,
+          1.05,
+          -3.6
+        ],
+        "fov": 48,
+        "blur": 1.4,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          0.58,
+          1.85,
+          3.9
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              0.44,
+              1.85,
+              3.9
+            ],
+            "look": [
+              0,
+              1.01,
+              -3.6
+            ],
+            "glide": 33
+          },
+          {
+            "word": 2,
+            "position": [
+              0.22,
+              2.34,
+              6.1
+            ],
+            "look": [
+              0,
+              1.19,
+              0.05
+            ],
+            "track": "alma",
+            "glide": 38
+          },
+          {
+            "word": 12,
+            "position": [
+              -0.31,
+              2.76,
+              8.1
+            ],
+            "look": [
+              0.1,
+              1.27,
+              0.6
+            ],
+            "track": "alma",
+            "glide": 38
+          }
+        ]
+      },
+      "actions": [
+        {
+          "kind": "run",
+          "target": "alma",
+          "word": 2,
+          "duration": 3.7,
+          "to": [
+            -0.81,
+            0.48,
+            4.1
+          ]
+        },
+        {
+          "kind": "run",
+          "target": "bea",
+          "word": 4,
+          "duration": 3.4,
+          "to": [
+            0.91,
+            0.48,
+            3.95
+          ]
+        },
+        {
+          "kind": "run",
+          "target": "marie",
+          "word": 6,
+          "duration": 3.4,
+          "to": [
+            0.17,
+            0.48,
+            4.18
+          ]
+        }
+      ],
+      "sounds": [],
+      "events": [
+        {
+          "id": "tunnel-flood",
+          "kind": "flood",
+          "word": 2,
+          "duration": 4.0,
+          "at": [
+            0,
+            0.1,
+            -8
+          ],
+          "amount": 1
+        }
+      ],
+      "acting": {
+        "version": 1,
+        "cues": [
+          {
+            "actor": "alma",
+            "word": 0,
+            "expression": "concern",
+            "duration": 1.6,
+            "eyes": [
+              -0.55,
+              0.3
+            ],
+            "brow": "worried",
+            "mouth": "frown"
+          },
+          {
+            "actor": "alma",
+            "word": 2,
+            "expression": "fear",
+            "duration": 2.85,
+            "eyes": [
+              0.65,
+              0.2
+            ],
+            "tilt": 8,
+            "brow": "worried",
+            "mouth": "teeth",
+            "blink": "blink"
+          },
+          {
+            "actor": "alma",
+            "word": 12,
+            "expression": "relief",
+            "duration": 2,
+            "eyes": [
+              0.25,
+              -0.1
+            ],
+            "tilt": -6,
+            "mouth": "smile"
+          },
+          {
+            "actor": "bea",
+            "word": 2,
+            "expression": "shock",
+            "duration": 2,
+            "eyes": [
+              -0.9,
+              0.25
+            ],
+            "tilt": -8,
+            "brow": "raised",
+            "mouth": "O"
+          },
+          {
+            "actor": "marie",
+            "word": 8,
+            "expression": "fear",
+            "duration": 2.15,
+            "eyes": [
+              0.75,
+              0
+            ],
+            "mouth": "teeth"
+          }
+        ]
+      }
+    },
+    {
+      "role": "turn",
+      "text": "The strangest part? Nobody knew this drain existed. Where does the water go?",
+      "claims": [
+        "lake-drained"
+      ],
+      "visual": "Return to the same low basin and catch the last water spiralling into the dark opening.",
+      "scene": "lost-platform",
+      "camera": {
+        "to": [
+          8.2,
+          10.0,
+          6.7
+        ],
+        "look": [
+          0,
+          -2,
+          0
+        ],
+        "fov": 51,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          7.5,
+          8.9,
+          5.6
+        ]
+      },
+      "actions": [],
+      "sounds": []
+    },
+    {
+      "role": "analogy",
+      "text": "You see, beneath the lake is a network of salt-mine passages. Drilling appears to have opened a route into the mine. Water rushed in, and the ground collapsed, widening the opening. Imagine pulling a bathtub plug, except the bathtub is a lake and the drain is a mine.",
+      "claims": [
+        "opening"
+      ],
+      "visual": "Dolly toward a layered cutaway showing the route and the widening throat into the mine passages.",
+      "scene": "drain-section",
+      "camera": {
+        "to": [
+          5.8,
+          5.7,
+          15
+        ],
+        "look": [
+          0,
+          -2.25,
+          0
+        ],
+        "fov": 45,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          7.3,
+          5.8,
+          17
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              7.3,
+              5.8,
+              17
+            ],
+            "look": [
+              0,
+              -2.25,
+              0
+            ],
+            "glide": 35
+          },
+          {
+            "word": 21,
+            "position": [
+              5,
+              5.9,
+              13.8
+            ],
+            "look": [
+              0,
+              -2.15,
+              0
+            ],
+            "glide": 40
+          },
+          {
+            "word": 31,
+            "position": [
+              5.9,
+              8.7,
+              14.5
+            ],
+            "look": [
+              0,
+              -1.75,
+              0.2
+            ],
+            "glide": 38
+          },
+          {
+            "word": 43,
+            "position": [
+              4.1,
+              3.2,
+              12.5
+            ],
+            "look": [
+              0,
+              -2.7,
+              0.25
+            ],
+            "glide": 28
+          }
+        ]
+      },
+      "actions": [],
+      "sounds": [],
+      "events": [
+        {
+          "id": "enlarging-opening",
+          "kind": "explain",
+          "word": 11,
+          "duration": 7,
+          "at": [
+            0,
+            -2.0,
+            0
+          ],
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "role": "consequence",
+      "text": "Then a coastal canal starts flowing backward. Water pours into the basin. The lake fills again, deeper and saltier.",
+      "claims": [
+        "reversal"
+      ],
+      "visual": "Reveal the reversal in a long canal and follow the white water as it drops into the emptied basin.",
+      "scene": "reverse-canal",
+      "camera": {
+        "to": [
+          5.1,
+          6.2,
+          9.4
+        ],
+        "look": [
+          0,
+          -0.7,
+          -0.9
+        ],
+        "fov": 49,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          5.9,
+          6,
+          11
+        ],
+        "keys": [
+          {
+            "word": 0,
+            "position": [
+              5.9,
+              6,
+              11
+            ],
+            "look": [
+              0,
+              -0.7,
+              -0.9
+            ],
+            "glide": 37
+          },
+          {
+            "word": 7,
+            "position": [
+              3.75,
+              5.5,
+              8.7
+            ],
+            "look": [
+              0,
+              -0.7,
+              1.4
+            ],
+            "glide": 40
+          }
+        ]
+      },
+      "actions": [],
+      "sounds": [],
+      "events": [
+        {
+          "id": "canal-reversal",
+          "kind": "reverse",
+          "word": 5,
+          "duration": 4.5,
+          "at": [
+            0,
+            -0.3,
+            -0.8
+          ],
+          "amount": 1
+        },
+        {
+          "id": "basin-refills",
+          "kind": "refill",
+          "word": 14,
+          "duration": 4.1,
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "role": "payoff",
+      "text": "The drillers went looking for oil. The lake found a way to change its entire plumbing.",
+      "claims": [
+        "lake-drained"
+      ],
+      "visual": "Quietly repeat the opening composition over the refilled lake.",
+      "scene": "refilled",
+      "camera": {
+        "to": [
+          8,
+          5.8,
+          12
+        ],
+        "look": [
+          0,
+          1,
+          0
+        ],
+        "fov": 47,
+        "blur": 0.75,
+        "motion": "glide",
+        "emphasis": 0,
+        "from": [
+          10,
+          6.7,
+          14
+        ]
+      },
+      "actions": [],
+      "sounds": []
+    }
+  ],
+  "publish": {
+    "privacy": "private"
+  }
+}

@@ -19,7 +19,7 @@ export type Props = {
 };
 
 function makeView(canvas: HTMLCanvasElement, shot: Shot, film: Film, width: number, height: number, repair: boolean, samples: number) {
-  const stage = new Stage(shot, film.story, width, height);
+  const stage = new Stage(shot, film.story, width, height, film.events);
   const blur = shot.beat.camera.blur > 0 || (shot.cameraKeys ?? []).some((key) => (key.blur ?? 0) > 0);
   const look = makeLook(canvas, stage.scene, stage.camera, width, height, samples, blur);
   return {

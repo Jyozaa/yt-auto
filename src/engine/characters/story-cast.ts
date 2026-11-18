@@ -4,17 +4,18 @@ import type {Shot} from '../../story/timeline';
 import {clamp, smooth} from '../camera/choreography';
 import {Actor, Fx, Pool, SU, blob, detachCast, lidAt, person, seedOf, viewOf, type Stage as Placements} from './sprite-cast';
 import {designHeight, fxBurst, fxCreak, fxNote, fxPuff, fxSplash, fxStars, INK, type Expr, type Outfit, type Pen} from './toon';
-import {stepsPerSecond} from './gait';
+import {cadence, gaitAt} from './gait';
+import {faceAt} from './acting';
 
 type Member = Shot['scene']['actors'][number];
 const fps = 30;
 const seed = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) % 997, 0);
-const expression = (look: Member['look']): Expr => look === 'curious' ? 'smile_closed' : look === 'doubt' ? 'stern' : look ?? 'neutral';
+const expression = (look: Member['look']): Expr => look ?? 'neutral';
 
 const outfitOf = (c: Story['characters'][number]): Outfit => ({
   jacket: c.coat, pants: c.trousers, boots: c.boots ?? INK, skin: c.skin, hair: c.hair, build: c.build,
   dress: c.outfit === 'dress' ? c.coat : undefined,
-  hat: c.hat === 'bare' ? null : c.hat ?? 'hair', cap: c.hatColor ?? c.hair,
+  hat: c.hat === 'bare' ? null : c.hat ?? 'hair', cap: c.hatColor ?? c.hair, hairStyle: c.hairStyle,
   buttons: c.buttons ?? (c.outfit === 'waistcoat' ? '#cba362' : undefined),
   moustache: c.moustache, belt: c.belt, sash: c.sash
 });
@@ -48,27 +49,29 @@ export class StoryCast {
       const who = {i: seed(data.id), o, okey: data.id};
       const scale = data.height / (SU * designHeight(o.build, seedOf(who.i)));
       const actions = shot.actions.filter((action) => action.target === entry.id).sort((a, b) => a.frame - b.frame);
-      const walks = actions.flatMap((action) => action.kind === 'walk' ? [action] : []);
-      return {entry, actor: new Actor(root), who, scale, actions, walks};
+      const walks = actions.flatMap((action) => action.kind === 'walk' || action.kind === 'run' ? [{...action, kind: action.kind}] : []);
+      const faces = shot.faces?.filter((cue) => cue.actor === entry.id) ?? [];
+      return {entry, actor: new Actor(root), who, scale, actions, walks, faces};
     });
   }
 
   private walk(member: typeof this.members[number], frame: number) {
     const at = new T.Vector3(...member.entry.at);
     const step = new T.Vector3();
-    let phase = 0, active = false, rate = 0, length = 0;
+    let phase = 0, active = false, stride = 0, length = 0, running = false, energy = 1;
     for (const action of member.walks) {
       if (frame < action.frame) break;
       step.set(...action.to).sub(at);
+      const gait = gaitAt(action, frame);
       const t = clamp((frame - action.frame) / (action.duration * fps));
-      at.addScaledVector(step, t);
+      at.addScaledVector(step, gait.distance);
       active = t < 1;
       length = Math.hypot(step.x, step.z);
-      rate = length / action.duration;
-      phase = t * action.duration * stepsPerSecond / 2;
+      stride = length / (action.duration * cadence(action.kind));
+      ({phase, running, energy} = gait);
       if (active) break;
     }
-    return {at, step, active: active && length > .001, rate, phase};
+    return {at, step, active: active && length > .001, stride, phase, running, energy};
   }
 
   position(id: string, frame: number) {
@@ -83,7 +86,7 @@ export class StoryCast {
     const time = frame / fps;
     for (const [i, member] of this.members.entries()) {
       const {entry, actor, who, scale, actions} = member;
-      const {at, step, active, rate, phase} = this.walk(member, frame);
+      const {at, step, active, stride, phase, running, energy} = this.walk(member, frame);
       const envelope = (kind: typeof actions[number]['kind']) => {
         const action = actions.findLast((a) => a.kind === kind && frame >= a.frame);
         if (!action) return 0;
@@ -94,28 +97,29 @@ export class StoryCast {
       const drop = fall ? clamp((frame - fall.frame) / (fall.duration * fps)) : 0;
       const react = Math.max(envelope('react'), envelope('flinch'));
       const doubt = Math.max(envelope('inspect'), envelope('shrug'));
-      const expr: Expr = fall ? drop < 1 ? 'shock' : 'dazed' :
-        react > .28 ? 'shock' : doubt > .45 ? 'stern' : expression(entry.look);
+      const acted = faceAt(member.faces, frame);
+      const expr: Expr = acted?.expression ?? (member.faces.length ? expression(entry.look) : fall ? drop < 1 ? 'shock' : 'dazed' :
+        react > .28 ? 'shock' : doubt > .45 ? 'stern' : expression(entry.look));
       const facing = entry.facing === 'left' ? -1 : 1;
       const dx = active ? step.x : facing, dz = active ? step.z : 0;
       const norm = Math.hypot(dx, dz) || 1;
       const automatic = viewOf(cam, at.x, at.z, dx / norm, dz / norm);
       const side = !fall && (entry.view === 'side' || ((entry.view === 'auto' || !entry.view) && active && automatic.side));
       const view = {side, mirror: side && (active || entry.view === 'auto' ? automatic.mirror : facing < 0)};
-      const blink = lidAt(time, who.i + i * 13);
-      const lean = 13 * envelope('lean') + 9 * doubt - 14 * react;
-      const headTilt = 10 * doubt + 8 * envelope('nod') * Math.sin(time * 13);
+      const blink = acted?.blink ?? lidAt(time, who.i + i * 13);
+      const lean = 13 * envelope('lean') + 9 * doubt - 14 * react + (active && running ? 13 * energy : 0);
+      const headTilt = (acted?.tilt ?? 10 * doubt) + 8 * envelope('nod') * Math.sin(time * 13);
       const gesture = Math.max(envelope('wave'), envelope('point'));
-      const footDistance = rate / stepsPerSecond;
       const roll = fall ? facing * Math.sin(Math.PI * drop) * .42 : 0;
       const p = person(cam, who, at.x, at.y + (fall ? Math.sin(Math.PI * drop) * .23 : 0), at.z, view, {
-        phase, mode: fall ? drop < 1 ? 'fall' : 'sit' : active ? 'stroll' : 'stand',
-        look: entry.view === 'front' ? 0 : facing * .48, facing: entry.view === 'front' ? 0 : facing,
-        expr, blink, tilt: lean, headTilt, lift: 48,
+        phase, mode: fall ? drop < 1 ? 'fall' : 'sit' : active ? running ? 'march' : 'stroll' : 'stand',
+        look: entry.view === 'front' ? 0 : facing * .48, facing: entry.view === 'front' ? 0 : acted ? Math.max(-1, Math.min(1, facing * .62 + acted.turn * .89)) : facing,
+        expr, blink, tilt: lean, headTilt, lift: running ? 88 * energy : 48, motion: energy, face: acted?.face,
         wave: gesture > .18 ? gesture * Math.sin(time * 9) : undefined
       }, {
         phase, expr, blink, mode: active ? 'march' : 'stand', tilt: lean, headTilt, gesture,
-        stride: Math.min(1.05, footDistance / (370 * SU * scale) * automatic.fs)
+        stride: Math.min(1.05, stride / (370 * SU * scale) * automatic.fs) * (running ? .45 + energy * .55 : 1),
+        stomp: running ? .85 + .95 * energy : 1, run: running ? energy : 0, face: acted?.face
       }, scale);
       this.placeActor(actor, p, camera, roll, castShadow);
       blob(plan, at.x, at.y, at.z, scale, fall ? .7 : 1, sunlight, this.shot.scene.light);

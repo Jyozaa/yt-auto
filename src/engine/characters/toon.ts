@@ -14,11 +14,13 @@ const SH_SKIN: C3 = [0.96, 0.86, 0.84]; // measured shadow/lit ratio on skin hea
 const SH_CLOTH: C3 = [0.64, 0.66, 0.74]; // torsos: lit side -> far side ~0.65
 const SH_FELT: C3 = [0.62, 0.62, 0.7];
 
+import type {HairStyle} from '../../story/schema';
+
 export type Build = "adult" | "stout" | "kid";
 export type Outfit = {
   jacket: string; pants: string; boots: string; hat?: string | null; belt?: string | null; buttons?: string; rifle?: boolean;
   sash?: string; sword?: boolean; moustache?: string; skin?: string; head?: number; cap?: string; hair?: string; dress?: string;
-  build?: Build;
+  build?: Build; hairStyle?: HairStyle;
 };
 type P2 = [number, number];
 
@@ -228,9 +230,22 @@ const DEF_LIGHT = rad(-120);
 
 // ---------------- faces ----------------
 export type Expr = "neutral" | "stern" | "grin" | "laugh" | "whistle" | "nervous" | "shock" | "relief" | "relief_open" | "dazed"
-  | "pained" | "smile" | "smile_closed" | "lick";
+  | "pained" | "smile" | "smile_closed" | "lick" | "curious" | "doubt" | "confused" | "fear"
+  | "nervous-laugh" | "sarcasm" | "disbelief" | "concern" | "concentrate";
 type EyeK = "dot" | "small" | "lid" | "slit" | "happy" | "dash" | "squeeze" | "shock" | "shockHalf" | "spiral";
 type MouthK = "dash" | "frown" | "smirk" | "smile" | "smileWide" | "grin" | "laugh" | "o" | "O" | "wave" | "teeth" | "lick";
+const BROWS = {
+  raised: [-7, -5], worried: [-7, 3], knit: [5, -3], skeptical: [0, -7], level: [0, 0],
+} satisfies Record<string, [number, number]>;
+export type FaceDetail = {
+  eyes?: [number, number]; brow?: keyof typeof BROWS; mouth?: MouthK; intensity?: number;
+};
+const browOffsets = (base: [number, number], detail: FaceDetail | undefined, asymmetry: number) => {
+  const [inner, outer] = detail?.brow ? BROWS[detail.brow] : base;
+  const gain = detail?.intensity ?? 1;
+  const lift = detail?.brow === "skeptical" ? asymmetry * 2.2 : 0;
+  return [inner * gain + lift, -1 + (outer + 1) * gain + lift];
+};
 /** eyes [back, front], brows [inner, outer] offsets in u (+ = down), mouth kind */
 const FACE: Record<Expr, { eye: [EyeK, EyeK]; brow: [number, number]; mouth: MouthK }> = {
   neutral: { eye: ["lid", "lid"], brow: [0, -1], mouth: "dash" },
@@ -246,6 +261,15 @@ const FACE: Record<Expr, { eye: [EyeK, EyeK]; brow: [number, number]; mouth: Mou
   pained: { eye: ["squeeze", "lid"], brow: [-3, 2], mouth: "teeth" },
   smile: { eye: ["dot", "dot"], brow: [0, -1], mouth: "smirk" },
   smile_closed: { eye: ["happy", "happy"], brow: [0, -1], mouth: "smile" },
+  curious: { eye: ["lid", "dot"], brow: [-4, -6], mouth: "o" },
+  doubt: { eye: ["slit", "lid"], brow: [1, -6], mouth: "dash" },
+  confused: { eye: ["lid", "small"], brow: [2, -7], mouth: "wave" },
+  fear: { eye: ["shockHalf", "shock"], brow: [-7, 3], mouth: "teeth" },
+  "nervous-laugh": { eye: ["lid", "happy"], brow: [-5, 1], mouth: "laugh" },
+  sarcasm: { eye: ["slit", "lid"], brow: [-2, -6], mouth: "smirk" },
+  disbelief: { eye: ["small", "shockHalf"], brow: [-7, -8], mouth: "o" },
+  concern: { eye: ["small", "lid"], brow: [-6, 4], mouth: "frown" },
+  concentrate: { eye: ["slit", "slit"], brow: [4, -3], mouth: "dash" },
   lick: { eye: ["dot", "dot"], brow: [0, -1], mouth: "lick" },
 };
 const halfLid = (k: EyeK): EyeK => (k === "dot" || k === "small" ? "lid" : k === "lid" ? "slit" : k === "shock" ? "shockHalf" : k);
@@ -253,18 +277,19 @@ const eyeKind = (k: EyeK, lid: number): EyeK =>
   lid >= 1 && k !== "happy" && k !== "squeeze" && k !== "spiral" ? "dash" : lid > 0 ? halfLid(k) : k;
 const lidOf = (b: boolean | number | undefined) => (b === true ? 1 : Number(b) || 0);
 
-const eye = (p: Pen, kind: EyeK, x: number, ey: number, u: number, side: number, look: number, skin: string) => {
+const eye = (p: Pen, kind: EyeK, x: number, ey: number, u: number, side: number, look: number, skin: string, vertical = 0) => {
+  const gazeY = vertical * 2.4 * u;
   const lx = x + look * 3 * u, lw = 3.8 * u;
   switch (kind) {
-    case "dot": p.ell(lx, ey, 3.8 * u, 5.5 * u, INK, 0); break;
-    case "small": p.ell(lx, ey, 3 * u, 4.4 * u, INK, 0); break;
-    case "lid": p.ell(lx, ey - u, 7 * u, 6 * u, INK, 0, 0, 180); p.stroke([[x - 9 * u, ey - u], [x + 9 * u, ey - u]], lw); break;
+    case "dot": p.ell(lx, ey + gazeY, 3.8 * u, 5.5 * u, INK, 0); break;
+    case "small": p.ell(lx, ey + gazeY, 3 * u, 4.4 * u, INK, 0); break;
+    case "lid": p.ell(lx, ey - u, 7 * u, (6 + vertical * 1.5) * u, INK, 0, 0, 180); p.stroke([[x - 9 * u, ey - u], [x + 9 * u, ey - u]], lw); break;
     case "slit": p.ell(lx, ey, 7 * u, 2.6 * u, INK, 0, 0, 180); p.stroke([[x - 9 * u, ey], [x + 9 * u, ey]], lw); break;
     case "happy": p.arc(x, ey + 3 * u, 8 * u, 6 * u, 200, 340, lw); break;
     case "dash": p.stroke([[x - 8.5 * u, ey], [x + 8.5 * u, ey]], lw); break;
     case "squeeze": p.stroke([[x + 6 * u * side, ey - 5 * u], [x - 6 * u * side, ey], [x + 6 * u * side, ey + 5 * u]], lw); break;
     case "shock": case "shockHalf":
-      p.ell(x, ey, 11 * u, 11 * u, WHITE, 2.6 * u); p.dot(lx - side * 1.5 * u, ey + 1.5 * u, 3 * u);
+      p.ell(x, ey, 11 * u, 11 * u, WHITE, 2.6 * u); p.dot(lx - side * 1.5 * u, ey + 1.5 * u + gazeY, 3 * u);
       if (kind === "shockHalf") { p.ell(x, ey, 11 * u, 11 * u, skin, 0, 180, 360); p.stroke([[x - 11 * u, ey], [x + 11 * u, ey]], 2.6 * u); }
       break;
     default: {
@@ -307,42 +332,126 @@ const mouth = (p: Pen, kind: MouthK, mx: number, my: number, u: number, k = 1) =
 /** face v2 (front / 3-4). u = 1 % of the head path width W. Eyes 26u apart on the centre line, brows 20u up, mouth 20u
  *  down, everything slid toward the facing side. No blush, no catchlights. */
 const faceFront = (p: Pen, cx: number, cy: number, W: number, expr: Expr, facing: number, look: number, lid: number, brim: boolean,
-  skin: string, moustache?: string, stout = false) => {
+  skin: string, moustache?: string, stout = false, detail?: FaceDetail) => {
   const u = W / 100, F = FACE[expr], fx = cx + 7 * u * facing;
   const ex = (F.eye[0] === "shock" ? 12 : 13) * u, ey = cy;
   for (const side of [-1, 1]) {
-    const x = fx + side * ex;
-    const kind = eyeKind(F.eye[(facing ? side === facing : side > 0) ? 1 : 0], lid);
-    eye(p, kind, x, ey, u, side, look, skin);
-    const [dI, dO] = F.brow, by = ey - (brim ? 17 : 20) * u;
-    if (kind === "shock" || kind === "shockHalf") p.arc(x, by - 6 * u, 9 * u, 3 * u, 200, 340, 4 * u);
+    const x = fx + side * ex * (1 + side * facing * .12);
+    const kind = eyeKind(F.eye[(facing ? side === Math.sign(facing) : side > 0) ? 1 : 0], lid);
+    eye(p, kind, x, ey, u, side, detail?.eyes?.[0] ?? look, skin, detail?.eyes?.[1]);
+    const [dI, dO] = browOffsets(F.brow, detail, side), by = ey - (brim ? 17 : 20) * u;
+    if (!detail?.brow && (kind === "shock" || kind === "shockHalf")) p.arc(x, by - 6 * u, 9 * u, 3 * u, 200, 340, 4 * u);
     else taper(p, [x - side * 8.5 * u, by + dI * u], [x + side * 8.5 * u, by + dO * u], 5 * u, 2.5 * u);
   }
   const mx = cx + 8 * u * facing, my = cy + 20 * u;
-  mouth(p, F.mouth, mx, my, u);
+  mouth(p, detail?.mouth ?? F.mouth, mx, my, u, .67 + .33 * (detail?.intensity ?? 1));
   if (moustache) for (const s of [-1, 1])
     taper(p, [mx + s * 1.5 * u, cy + 12.5 * u], [mx + s * (stout ? 19 : 15) * u, cy + (stout ? 10.5 : 15) * u], stout ? 5.5 * u : 4.5 * u, 1.6 * u, moustache);
   if (expr === "nervous") p.ell(cx + 40 * u * (facing || 1), cy - 22 * u, 3 * u, 5 * u, "#9fd4ff", 2 * u);
 };
 
 /** profile face (facing screen-right): one eye, brow, nose tick, mouth near the front edge; no skin bump nose, no ear */
-const faceSide = (p: Pen, hx: number, hy: number, W: number, expr: Expr, lid: number, brim: boolean, skin: string, moustache?: string, stout = false) => {
+const faceSide = (p: Pen, hx: number, hy: number, W: number, expr: Expr, lid: number, brim: boolean, skin: string, moustache?: string, stout = false, detail?: FaceDetail) => {
   const u = W / 100, F = FACE[expr], ex = hx + 27 * u, ey = hy;
   const kind = eyeKind(F.eye[1], lid);
-  eye(p, kind, ex, ey, u, 1, 0.6, skin);
-  const by = ey - (brim ? 17 : 20) * u, [dI, dO] = F.brow;
-  if (kind === "shock" || kind === "shockHalf") p.arc(ex, by - 6 * u, 9 * u, 3 * u, 200, 340, 4 * u);
+  eye(p, kind, ex, ey, u, 1, detail?.eyes?.[0] ?? .6, skin, detail?.eyes?.[1]);
+  const by = ey - (brim ? 17 : 20) * u, [dI, dO] = browOffsets(F.brow, detail, 1);
+  if (!detail?.brow && (kind === "shock" || kind === "shockHalf")) p.arc(ex, by - 6 * u, 9 * u, 3 * u, 200, 340, 4 * u);
   else taper(p, [ex + 8 * u, by + dI * u], [ex - 7 * u, by - u + dO * u], 5 * u, 2.5 * u);
   p.stroke([[hx + 44 * u, hy + 4 * u], [hx + 47.5 * u, hy + 9 * u], [hx + 43 * u, hy + 10 * u]], 3 * u);
-  mouth(p, F.mouth, hx + 33 * u, hy + 21 * u, u, 0.62);
+  mouth(p, detail?.mouth ?? F.mouth, hx + 33 * u, hy + 21 * u, u, .44 + .18 * (detail?.intensity ?? 1));
   if (moustache) taper(p, [hx + 41 * u, hy + 13.5 * u], [hx + 25 * u, hy + (stout ? 11.5 : 16) * u], stout ? 5.5 * u : 4.5 * u, 1.6 * u, moustache);
   if (expr === "nervous") p.ell(hx - 30 * u, hy - 24 * u, 3 * u, 5 * u, "#9fd4ff", 2 * u);
 };
 
 // ---------------- hats ----------------
 const BONNET = "#e9cf8f", BONNET_BRIM = "#d6b46a";
+// Each fringe overhangs the head differently. The rear layers are painted before the skin.
+const HAIR: Record<HairStyle, {front: P2[]; side: P2[]; rear?: P2[]; profile?: P2[]; strokes: P2[][]}> = {
+  messy: {
+    front: [[-1.01,-.12],[-1.02,-.66],[-.81,-.88],[-.84,-1.08],[-.39,-1.02],[-.24,-1.26],[-.01,-1.07],
+      [.21,-1.2],[.49,-1.09],[.84,-1.10],[.91,-.88],[1.03,-.67],[.99,-.24],[.74,-.43],[.47,-.42],[.52,-.63],[.10,-.44],[.20,-.69],[-.39,-.49],[-.68,-.30]],
+    side: [[-1.03,.56],[-1.12,-.25],[-.95,-.89],[-.69,-1.03],[-.71,-1.18],[-.21,-1.03],[.01,-1.24],[.37,-1.09],
+      [.65,-1.18],[.91,-.99],[1.05,-.67],[.91,-.53],[.73,-.66],[.45,-.51],[.54,-.73],[.02,-.55],[-.43,-.15],[-.62,.30]],
+    strokes: [[[-.58,-.84],[-.31,-.92],[.02,-.93]],[[.10,-.83],[.4,-.93],[.65,-.92]]],
+  },
+  "side-part": {
+    front: [[-1.04,.12],[-1.07,-.39],[-.89,-.83],[-.57,-1.08],[-.02,-1.15],[.48,-1.06],[.83,-1.0],[1.04,-.73],
+      [1.05,-.26],[.87,-.13],[.73,-.58],[.56,-.80],[.43,-.75],[.08,-.52],[-.42,-.46],[-.66,-.33],[-.74,.04]],
+    side: [[-1.07,.37],[-1.10,-.32],[-.97,-.78],[-.63,-1.04],[-.12,-1.15],[.53,-1.12],[.86,-.97],[1.05,-.77],[.98,-.53],
+      [.71,-.70],[.48,-.66],[.13,-.49],[-.40,-.46],[-.61,-.03],[-.84,.15]],
+    strokes: [[[-.71,-.66],[-.43,-.82],[-.16,-.87]],[[.28,-.96],[.53,-.89],[.73,-.73]]],
+  },
+  "slicked-back": {
+    front: [[-1.04,-.08],[-1.06,-.59],[-.76,-.93],[-.24,-1.03],[.36,-1.11],[.86,-1.04],[1.03,-.81],
+      [.98,-.50],[.81,-.23],[.70,-.64],[.36,-.82],[-.13,-.74],[-.60,-.57],[-.81,-.26],[-.83,.03]],
+    side: [[-1.11,.28],[-1.13,-.38],[-.94,-.78],[-.40,-1.04],[.21,-1.10],[.84,-1.13],[1.09,-.82],[.95,-.59],
+      [.65,-.69],[.22,-.59],[-.19,-.32],[-.56,-.23],[-.76,.12]],
+    strokes: [[[-.76,-.54],[-.29,-.87],[.43,-.98]],[[-.80,-.31],[-.41,-.63],[.38,-.86]]],
+  },
+  curly: {
+    front: [[-1.04,.28],[-1.16,-.02],[-1.05,-.24],[-1.15,-.49],[-.98,-.68],[-.99,-.92],[-.72,-1.0],[-.62,-1.20],[-.31,-1.15],
+      [-.13,-1.27],[.14,-1.13],[.36,-1.23],[.56,-1.08],[.82,-1.11],[.91,-.9],[1.13,-.70],[1.07,-.48],[1.14,-.19],
+      [.91,-.07],[.85,-.34],[.66,-.41],[.54,-.58],[.27,-.49],[.12,-.61],[-.12,-.46],[-.35,-.57],[-.52,-.40],[-.77,-.32],[-.82,.02]],
+    side: [[-1.19,.47],[-1.23,.12],[-1.12,-.07],[-1.18,-.36],[-1.03,-.54],[-1.03,-.81],[-.83,-.90],[-.72,-1.14],
+      [-.47,-1.09],[-.24,-1.27],[-.02,-1.12],[.21,-1.20],[.46,-1.08],[.71,-1.15],[.92,-.92],[1.07,-.77],
+      [.98,-.56],[.77,-.47],[.65,-.66],[.37,-.52],[.19,-.63],[-.08,-.48],[-.25,-.22],[-.49,-.27],[-.66,.13],[-.84,.15]],
+    rear: [[-1.03,-.75],[-1.24,-.40],[-1.19,.22],[-1.04,.59],[-.81,.49],[.80,.57],[1.04,.45],[1.26,.10],[1.16,-.48],[.94,-.87]],
+    strokes: [[[-.64,-.78],[-.58,-.98],[-.35,-.91]],[[-.12,-.83],[.01,-1.00],[.24,-.90]],[[.53,-.85],[.63,-.96],[.83,-.79]]],
+  },
+  long: {
+    front: [[-1.0,.36],[-1.07,-.36],[-.91,-.83],[-.60,-1.07],[-.12,-1.13],[.29,-1.10],[.71,-.98],[.98,-.62],[1.03,-.21],
+      [.89,.47],[.65,.52],[.74,.09],[.73,-.39],[.35,-.65],[.13,-.88],[-.14,-.65],[-.51,-.48],[-.71,-.18],[-.83,.38]],
+    side: [[-1.10,.73],[-1.18,.12],[-1.05,-.60],[-.74,-1.0],[-.20,-1.17],[.41,-1.11],[.82,-.95],[1.03,-.67],[.95,-.57],
+      [.80,-.63],[.52,-.50],[.31,-.60],[.03,-.43],[-.26,-.12],[-.36,.38],[-.62,.85],[-.86,.64]],
+    rear: [[-.94,-.77],[-1.07,-.32],[-1.13,.39],[-1.28,1.09],[-1.02,1.17],[-.86,1.36],[-.63,1.23],
+      [.65,1.25],[.80,1.39],[1.14,1.30],[1.17,.97],[1.04,.42],[1.09,-.36],[.93,-.78]],
+    profile: [[-.78,-.84],[-1.08,-.48],[-1.18,.16],[-1.35,1.06],[-1.54,1.26],[-1.22,1.26],[-1.05,1.43],
+      [-.76,1.33],[-.55,1.41],[-.29,1.14],[-.37,.62],[-.18,.05],[-.37,-.66]],
+    strokes: [[[-.80,-.59],[-.49,-.86],[-.18,-.95]],[[.58,-.73],[.73,-.57],[.82,-.33]]],
+  },
+  "tied-back": {
+    front: [[-1.02,.1],[-1.05,-.45],[-.89,-.88],[-.50,-1.07],[-.07,-1.16],[.38,-1.04],[.74,-1.0],[1.02,-.68],
+      [1.03,-.22],[.88,.07],[.74,-.20],[.63,-.55],[.28,-.63],[.02,-.82],[-.26,-.62],[-.57,-.47],[-.73,-.19],[-.78,.17]],
+    side: [[-1.05,.36],[-1.19,-.11],[-1.04,-.61],[-.81,-.91],[-.36,-1.10],[.19,-1.11],[.76,-1.02],[1.06,-.75],
+      [.94,-.59],[.67,-.65],[.35,-.48],[-.22,-.32],[-.43,-.04],[-.75,.23]],
+    rear: [[.71,-.05],[.97,.09],[1.18,.42],[1.33,.90],[1.23,1.21],[1.05,1.13],[.95,.81],[.67,.54],[.57,.20]],
+    profile: [[-.86,-.26],[-1.12,-.25],[-1.44,-.10],[-1.61,.24],[-1.57,.66],[-1.75,1.08],[-1.46,1.01],
+      [-1.24,.80],[-1.19,.49],[-1.08,.22],[-.85,.14]],
+    strokes: [[[-.81,-.42],[-.56,-.72],[-.25,-.93]],[[.32,-.84],[.52,-.77],[.76,-.64]]],
+  }
+};
+
+const drawHair = (p: Pen, o: Outfit, H: Blob, cx: number, hc: number, light: number,
+  side: boolean, facing: number, behind: boolean) => {
+  if (!o.hairStyle || (o.hat && o.hat !== "hair")) return false;
+  const design = HAIR[o.hairStyle];
+  const outline = behind ? (side ? design.profile ?? design.rear : design.rear) : side ? design.side : design.front;
+  if (!outline) return true;
+  const hair = o.hair ?? "#483232";
+  const col = behind ? shade(hair, .74) : hair;
+  const project = (points: P2[]) => rotPts(points.map(([x, y]) =>
+    [cx + (x + (side ? 0 : facing * .13 * Math.max(0, y + 1))) * H.a, hc + y * H.b]), H.rot, cx, hc);
+  const rounded = outline.flatMap((point, i) => {
+    const prev = outline[(i - 1 + outline.length) % outline.length], next = outline[(i + 1) % outline.length];
+    return curve(lerp2(prev, point, .78), point, lerp2(point, next, .22), 4);
+  });
+  const path = project(rounded);
+  p.shadedFill(path, col, mul(col, SH_FELT), light, H.a * 1.12, .57);
+  p.inkRing(path, H.a * .075, thickAngle(light));
+  if (!behind) p.clip(path, () => {
+    for (const [a, b, c] of design.strokes) p.stroke(project(curve(a, b, c, 8)), H.a * .021, mix(hair, "#cc9b7c", .28));
+  });
+  if (behind && o.hairStyle === "tied-back") {
+    const [x, y] = project([side ? [-1.05,.01] : [.93,.32]])[0];
+    p.ell(x, y, H.a * .091, H.b * .10, "#bb7658", H.a * .027);
+  }
+  return true;
+};
+
 /** parts of a hat that sit behind the head (bonnet) */
-const hatBehind = (p: Pen, o: Outfit, H: Blob, cx: number, hc: number, light: number, thick: number, ow: number, side: boolean) => {
+const hatBehind = (p: Pen, o: Outfit, H: Blob, cx: number, hc: number, light: number, thick: number, ow: number, side: boolean, facing = 0) => {
+  if (drawHair(p, o, H, cx, hc, light, side, facing, true)) return;
   if (o.hat !== "bonnet") return;
   const bb = blobPts(cx - (side ? 12 : 0) * (H.a / 50), hc - 0.07 * 2 * H.b, { ...H, a: H.a * 1.17, b: H.b * 1.13, asym: 0, egg: 0.04, seed: H.seed + 3 });
   p.shadedFill(bb, BONNET, mul(BONNET, SH_CLOTH), light, H.a * 1.17);
@@ -350,6 +459,7 @@ const hatBehind = (p: Pen, o: Outfit, H: Blob, cx: number, hc: number, light: nu
 };
 
 const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, light: number, seed: number, facing: number, side: boolean) => {
+  if (drawHair(p, o, H, cx, hc, light, side, facing, false)) return;
   const W = 2 * H.a, HH = 2 * H.b, u = W / 100, crown = hc - H.b, ow = 0.85 * 5 * u;
   const a = H.rot + rad(4 * (rnd(seed, 20) - 0.5)); // tilt with the head, +-2 deg extra
   const R = (pts: P2[]) => rotPts(pts, a, cx, hc);
@@ -442,7 +552,7 @@ export type FrontOpts = {
   phase?: number; expr?: Expr; mode?: "march" | "stroll" | "stand" | "sit" | "fall"; look?: number; blink?: boolean | number; lift?: number;
   prop?: Prop; tilt?: number; headTilt?: number; wave?: number;
   /** canvas angle the key light comes FROM (painted crescent + thick outline side) */
-  light?: number; facing?: -1 | 0 | 1; seed?: number;
+  light?: number; facing?: number; seed?: number; face?: FaceDetail; motion?: number;
 };
 
 const footStroke = (p: Pen, a: P2, b: P2, w: number, col: string) => {
@@ -457,7 +567,7 @@ export const bodyFront = (p: Pen, o: Outfit, opts: FrontOpts) => {
   const H = headBlob(seed, Bd.a, facing), W = 2 * H.a, HH = 2 * H.b, u = W / 100;
   const tall = (1 + Bd.torso + Bd.legs) * HH, sole = 975;
   // body bob 5 % (march) / 3 % (stroll) of the height, lowest at contact (phase 0 and 0.5)
-  const bob = mode === "march" ? 0.025 * tall * Math.cos(2 * two * phase) : mode === "stroll" ? 0.015 * tall * Math.cos(2 * two * phase) : 0;
+  const bob = (opts.motion ?? 1) * (mode === "march" ? 0.025 * tall * Math.cos(2 * two * phase) : mode === "stroll" ? 0.015 * tall * Math.cos(2 * two * phase) : 0);
   const torsoBot = mode === "sit" ? sole - 0.2 * HH : sole - Bd.legs * HH + bob;
   const chin = torsoBot - Bd.torso * HH, hc = chin - H.b, crown = hc - H.b, hipY = torsoBot - 0.12 * HH;
   const thick = thickAngle(light), ow = 5 * u;
@@ -600,20 +710,20 @@ export const bodyFront = (p: Pen, o: Outfit, opts: FrontOpts) => {
   // ---- head: rotates with the body, plus its own tilt about the chin ----
   const Ah = A + headTilt, [cpx, cpy] = rotAbout([300, chin], rad(A), [300, hipY]);
   p.rot = Ah ? [rad(Ah), 300, chin, cpx - 300, cpy - chin] : null;
-  hatBehind(p, o, H, 300, hc, light, thick, ow, false);
+  hatBehind(p, o, H, 300, hc, light, thick, ow, false, facing);
   const hp = blobPts(300, hc, H);
   p.shadedFill(hp, skin, mul(skin, SH_SKIN), light, H.a);
   p.inkRing(hp, ow, thick);
   hatOn(p, o, hp, H, 300, hc, light, seed, facing, false);
   const brim = !!o.hat && o.hat !== "hair" && o.hat !== "bonnet" && o.hat !== "cap";
-  faceFront(p, 300, hc, W, expr, facing, look, lid, brim, skin, o.moustache, o.build === "stout");
+  faceFront(p, 300, hc, W, expr, facing, look, lid, brim, skin, o.moustache, o.build === "stout", opts.face);
   p.rot = null;
 };
 
 export type SideOpts = {
   phase?: number; expr?: Expr; mode?: "march" | "stand" | "swing" | "push"; blink?: boolean | number; stomp?: number; pose?: number;
   /** step length as a multiple of 0.8 m (370 units): matches 1.6 m/s at 2 steps/s; scale by the view's foreshortening */
-  stride?: number; light?: number; seed?: number; tilt?: number; headTilt?: number; gesture?: number;
+  stride?: number; light?: number; seed?: number; tilt?: number; headTilt?: number; gesture?: number; face?: FaceDetail; run?: number;
   /** push mode: where the hands land at pose 1, in final canvas units (e.g. the swing kid's back) */
   hand?: [number, number];
 };
@@ -654,7 +764,7 @@ export const bodySide = (p: Pen, o: Outfit, opts: SideOpts) => {
     hipY = ankY - Math.sqrt(Math.max(1, Leff * Leff - stance.x * stance.x));
     for (const [L, near] of [[fL, false], [nL, true]] as const)
       legs.push({ ank: [300 + L.x, ankY - L.h], pitch: L.stance ? 0 : rad(35 * Math.sin(Math.PI * L.s) * (1 - 1.6 * L.s)), near });
-    lean = 4 + 3 * Math.cos(2 * two * phase); // 7 deg at contact, 1 deg at passing
+    lean = 4 + (3 + 4 * (opts.run ?? 0)) * Math.cos(2 * two * phase); // 7 deg at contact, 1 deg at passing
     nearFwd = S ? nL.x / (S / 2) : 0;
   } else if (mode === "push") {
     hipY = ankY - 0.87 * legLen;
@@ -707,8 +817,8 @@ export const bodySide = (p: Pen, o: Outfit, opts: SideOpts) => {
     }
     near = [S, [(S[0] + hN[0]) / 2, (S[1] + hN[1]) / 2 + 0.06 * HH], hN];
     far = [S, [(S[0] + hN[0]) / 2 - 4 * u, (S[1] + hN[1]) / 2 - 0.02 * HH], [hN[0] - 6 * u, hN[1] - 0.08 * HH]];
-  } else if (rifle) { near = [S, [S[0] - 4 * u, S[1] + 0.42 * HH], B0]; far = mode === "march" ? swingArm(rad(30) * nearFwd) : swingArm(0); }
-  else { near = swingArm(rad(-30) * nearFwd); far = mode === "march" ? swingArm(rad(30) * nearFwd) : null; }
+  } else if (rifle) { near = [S, [S[0] - 4 * u, S[1] + 0.42 * HH], B0]; far = mode === "march" ? swingArm(rad(30 + 21 * (opts.run ?? 0)) * nearFwd) : swingArm(0); }
+  else { near = swingArm(rad(-30 - 25 * (opts.run ?? 0)) * nearFwd); far = mode === "march" ? swingArm(rad(30 + 21 * (opts.run ?? 0)) * nearFwd) : null; }
   if (opts.gesture && !rifle && mode === "stand") {
     const h: P2 = [S[0] + HH * .82 * opts.gesture, S[1] + HH * (.48 - .66 * opts.gesture)];
     near = [S, [(S[0] + h[0]) / 2, h[1] + HH * .22], h];
@@ -752,7 +862,7 @@ export const bodySide = (p: Pen, o: Outfit, opts: SideOpts) => {
   p.inkRing(hp, ow, thick);
   hatOn(p, o, hp, H, hx, hc, light, seed, 1, true);
   const brim = !!o.hat && o.hat !== "hair" && o.hat !== "bonnet" && o.hat !== "cap";
-  faceSide(p, hx, hc, W, expr, lid, brim, skin, o.moustache, o.build === "stout");
+  faceSide(p, hx, hc, W, expr, lid, brim, skin, o.moustache, o.build === "stout", opts.face);
   p.rot = null;
 };
 

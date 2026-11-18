@@ -32,10 +32,10 @@ const kokoro: VoiceProvider = {
         after: i === tokens.length - 1 ? text.slice(end) : ''
       }));
     });
-    await writeFile(path, JSON.stringify({beats}));
+    await writeFile(path, JSON.stringify({beats, delivery: story.delivery}));
     try {
       const {stdout} = await run(python, ['scripts/kokoro_voice.py', path, raw]);
-      const result = z.object({voice: z.string(), speed: z.number(), method: z.string(),
+      const result = z.object({voice: z.string(), speed: z.number(), method: z.string(), phrasing: z.string(),
         words: z.array(z.object({word: z.string(), start: z.number(), end: z.number(), rms: z.number()}))
       }).parse(JSON.parse(stdout.toString()));
       const {words, ...metadata} = result;
@@ -61,7 +61,8 @@ const espeak: VoiceProvider = {
     const anchors = new Set<number>();
     let offset = 0;
     for (const beat of story.beats) {
-      for (const index of [0, beat.camera.emphasis ?? 0, ...beat.actions.map((a) => a.word), ...beat.sounds.map((s) => s.word)]) {
+      for (const index of [0, beat.camera.emphasis ?? 0, ...beat.actions.map((a) => a.word), ...beat.sounds.map((s) => s.word),
+        ...(beat.acting?.cues ?? []).map((cue) => cue.word), ...(beat.events ?? []).map((event) => event.word)]) {
         anchors.add(offset + index);
       }
       offset += wordsOf(beat.text).length;

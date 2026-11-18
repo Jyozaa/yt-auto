@@ -1,7 +1,9 @@
-import {fps, wordsOf, type Beat, type Scene, type Story} from './schema';
+import {fps, wordsOf, type Beat, type Scene, type Story, type FacialCue, type WorldEvent} from './schema';
 
 export type Word = {word: string; start: number; end: number; rms?: number};
 export type Alignment = {duration: number; words: Word[]; provider: string};
+export type TimedWorldEvent = WorldEvent & {frame: number; length: number; shot: number};
+export type TimedFacialCue = FacialCue & {frame: number; length: number};
 export type Shot = {
   start: number;
   end: number;
@@ -10,10 +12,13 @@ export type Shot = {
   emphasis: number;
   actions: (Beat['actions'][number] & {frame: number})[];
   sounds: (Beat['sounds'][number] & {frame: number})[];
+  faces?: TimedFacialCue[];
+  events?: TimedWorldEvent[];
   cameraKeys?: (NonNullable<Beat['camera']['keys']>[number] & {frame: number})[];
   effects?: (NonNullable<Beat['effects']>[number] & {frame: number})[];
 };
-export type Film = {story: Story; shots: Shot[]; frames: number};
+export type TimedAction = Shot['actions'][number];
+export type Film = {story: Story; shots: Shot[]; frames: number; events?: TimedWorldEvent[]};
 
 export function verifyAlignment(story: Story, alignment: Alignment, enforceRuntime = true) {
   const expected = wordsOf(story.narration);
@@ -55,11 +60,18 @@ export function compile(story: Story, alignment: Alignment): Film {
       emphasis: beat.camera.emphasis === undefined ? -1 : at(beat.camera.emphasis),
       actions: beat.actions.map((action) => ({...action, frame: Math.max(start, at(action.word) - 1)})),
       sounds: beat.sounds.map((sound) => ({...sound, frame: at(sound.word)})),
+      faces: beat.acting?.cues.map((cue) => ({...cue,
+        frame: Math.max(start, at(cue.word) - 2), length: Math.round(cue.duration * fps)
+      })).sort((a, b) => a.frame - b.frame),
+      events: beat.events?.map((event) => ({...event, shot: i,
+        frame: at(event.word), length: Math.round(event.duration * fps)
+      })),
       cameraKeys: beat.camera.keys?.map((key) => ({...key, frame: at(key.word)})),
       effects: beat.effects?.map((effect) => ({...effect, frame: Math.max(start, at(effect.word) - 1)}))
     };
     offset += count;
     return shot;
   });
-  return {story, shots, frames};
+  const events = shots.flatMap((shot) => shot.events ?? []).sort((a, b) => a.frame - b.frame);
+  return {story, shots, frames, ...(events.length ? {events} : {})};
 }

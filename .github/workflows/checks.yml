@@ -23,4 +23,6 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run validate
+      - run: npm run validate -- examples/foucault.json
+      - run: npm run validate -- examples/lake-peigneur-1980.json
+      - run: npm run audit -- examples/lake-peigneur-1980.json

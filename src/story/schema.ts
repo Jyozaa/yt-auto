@@ -5,8 +5,10 @@ const line = (max: number) => z.string().trim().min(1).max(max);
 const color = z.string().regex(/^#[0-9a-f]{6}$/i);
 const xyz = z.tuple([z.number().min(-100).max(100), z.number().min(-100).max(100), z.number().min(-100).max(100)]);
 const seconds = z.number().min(0.15).max(12);
+export const hairStyles = ['messy', 'side-part', 'slicked-back', 'curly', 'long', 'tied-back'] as const;
+export const worldKinds = ['eddy', 'motor', 'bind', 'drain', 'collapse', 'flood', 'explain', 'reverse', 'refill'] as const;
 const expressions = ['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief',
-  'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick', 'curious', 'doubt'] as const;
+  'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick', 'curious', 'doubt', 'confused', 'fear', 'nervous-laugh', 'sarcasm', 'disbelief', 'concern', 'concentrate'] as const;
 const sourceUrl = z.url({protocol: /^https$/}).max(512).refine((value) => {
   try {
     const url = new URL(value);
@@ -42,23 +44,33 @@ const camera = z.strictObject({
 const scene = z.strictObject({
   id,
   description: line(400),
-  environment: z.enum(['rotunda', 'terrace', 'workshop', 'diagram', 'street', 'gallery']),
+  environment: z.enum(['rotunda', 'terrace', 'workshop', 'diagram', 'street', 'gallery', 'lake', 'mine', 'cross-section', 'canal']),
   light: z.enum(['day', 'golden']),
   actors: z.array(z.strictObject({...placement, character: id, facing: z.enum(['left', 'right']).default('right'),
     look: z.enum(expressions).optional(), view: z.enum(['front', 'side', 'three-quarter', 'auto']).optional()})).max(8),
   props: z.array(z.strictObject({
-    ...placement, kind: z.enum(['pendulum', 'swing', 'turntable', 'globe', 'bench', 'crate', 'tree', 'lamp', 'plinth', 'arch', 'gear', 'cart', 'rail', 'barrel', 'worktable', 'telescope']),
+    ...placement, kind: z.enum(['pendulum', 'swing', 'turntable', 'globe', 'bench', 'crate', 'tree', 'lamp', 'plinth', 'arch', 'gear', 'cart', 'rail', 'barrel', 'worktable', 'telescope', 'rig', 'barge', 'skiff', 'shore-tree']),
     scale: z.number().min(0.2).max(3).default(1),
     yaw: z.number().min(-360).max(360).default(0),
     color: color.optional()
   })).max(20)
 });
 const action = z.discriminatedUnion('kind', [
-  z.strictObject({kind: z.literal('walk'), target: id, word: z.number().int().min(0), duration: seconds, to: xyz}),
+  z.strictObject({kind: z.enum(['walk', 'run', 'lift', 'drop']), target: id, word: z.number().int().min(0), duration: seconds, to: xyz}),
   z.strictObject({kind: z.enum(['point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod', 'wave', 'fall']), target: id, word: z.number().int().min(0), duration: seconds}),
   z.strictObject({kind: z.enum(['swing', 'spin', 'trace', 'roll']), target: id, word: z.number().int().min(0), duration: seconds,
     amount: z.number().min(-180).max(180)})
 ]);
+const faceCue = z.strictObject({
+  actor: id, word: z.number().int().min(0), duration: seconds, expression: z.enum(expressions),
+  eyes: z.tuple([z.number().min(-1).max(1), z.number().min(-1).max(1)]).optional(),
+  turn: z.number().min(-1).max(1).optional(), tilt: z.number().min(-25).max(25).optional(),
+  brow: z.enum(['raised', 'worried', 'knit', 'skeptical', 'level']).optional(),
+  mouth: z.enum(['dash', 'frown', 'smirk', 'smile', 'grin', 'laugh', 'o', 'O', 'wave', 'teeth']).optional(),
+  blink: z.enum(['auto', 'blink', 'closed', 'open']).optional(), intensity: z.number().min(0).max(1).optional()
+});
+const worldEvent = z.strictObject({id, kind: z.enum(worldKinds), word: z.number().int().min(0), at: xyz,
+  duration: z.number().min(.2).max(30), amount: z.number().min(.05).max(1).optional()});
 const beat = z.strictObject({
   role: z.enum(beatRoles),
   visual: line(300).optional(),
@@ -71,7 +83,9 @@ const beat = z.strictObject({
   sounds: z.array(z.strictObject({kind: z.enum(cueNames), word: z.number().int().min(0),
     pan: z.number().min(-1).max(1).optional(), gain: z.number().min(.05).max(1).optional()})).max(16),
   effects: z.array(z.strictObject({kind: z.enum(['burst', 'dust', 'splash', 'note', 'speed', 'spark', 'stars', 'stress']),
-    word: z.number().int().min(0), at: xyz, size: z.number().min(.08).max(8), duration: seconds})).max(16).optional()
+    word: z.number().int().min(0), at: xyz, size: z.number().min(.08).max(8), duration: seconds})).max(16).optional(),
+  acting: z.strictObject({version: z.literal(1), cues: z.array(faceCue).min(1).max(28)}).optional(),
+  events: z.array(worldEvent).max(12).optional()
 });
 const publish = z.strictObject({
   description: z.string().max(4200).optional(),
@@ -102,10 +116,11 @@ export const storySchema = z.strictObject({
     sources: z.array(id).min(1).max(8)
   })).min(1).max(35),
   narration: line(3500),
+  delivery: z.enum(['connected']).optional(),
   characters: z.array(z.strictObject({
     id, description: line(300), skin: color, hair: color, coat: color, trousers: color,
     outfit: z.enum(['waistcoat', 'workcoat', 'dress']), height: z.number().min(1.2).max(2.1).default(1.7),
-    build: z.enum(['adult', 'stout', 'kid']).optional(),
+    build: z.enum(['adult', 'stout', 'kid']).optional(), hairStyle: z.enum(hairStyles).optional(),
     hat: z.enum(['hair', 'cap', 'bonnet', 'tophat', 'shako', 'shako_tall', 'bare']).optional(),
     boots: color.optional(), hatColor: color.optional(), moustache: color.optional(),
     belt: color.optional(), sash: color.optional(), buttons: color.optional()
@@ -143,6 +158,7 @@ export const storySchema = z.strictObject({
   if (rate < 3.4 || rate > 4.1) issue(['narration'], 'Narration must be near 3.5–4 words per second');
   let previous = -1;
   const seen = new Set<string>();
+  unique(story.beats.flatMap((entry) => entry.events ?? []), ['beats']);
   story.beats.forEach((entry, i) => {
     const path = ['beats', i];
     const role = beatRoles.indexOf(entry.role);
@@ -156,7 +172,8 @@ export const storySchema = z.strictObject({
     const count = wordsOf(entry.text).length;
     const keys = entry.camera.keys ?? [];
     const indices = [...entry.actions.map((a) => a.word), ...entry.sounds.map((s) => s.word), entry.camera.emphasis ?? 0,
-      ...keys.map((key) => key.word), ...(entry.effects ?? []).map((effect) => effect.word)];
+      ...keys.map((key) => key.word), ...(entry.effects ?? []).map((effect) => effect.word),
+      ...(entry.acting?.cues ?? []).map((cue) => cue.word), ...(entry.events ?? []).map((event) => event.word)];
     if (!count || indices.some((index) => index >= count)) issue(path, 'Cue word index outside beat');
     if (Math.hypot(...entry.camera.from.map((v, j) => v - entry.camera.to[j])) < 0.035) issue(path, 'Camera must move during the shot');
     if (([entry.camera.from, entry.camera.to] as const).some((position, j) => {
@@ -170,6 +187,13 @@ export const storySchema = z.strictObject({
       const look = key.look.map((v, axis) => v + (subject ? subject.at[axis] : 0));
       if (Math.hypot(...key.position.map((v, axis) => v - look[axis])) < .3) issue(path, 'Camera key requires separation from its look target');
     }
+    const acted = new Set<string>();
+    for (const cue of entry.acting?.cues ?? []) {
+      if (!place?.actors.some(({id}) => id === cue.actor)) issue(path, 'Facial cue targets an unknown scene actor');
+      const timing = `${cue.actor}:${cue.word}`;
+      if (acted.has(timing)) issue(path, 'Facial cues must use distinct words per actor');
+      acted.add(timing);
+    }
     for (const a of entry.actions) {
       const prop = place?.props.find((p) => p.id === a.target);
       const actor = place?.actors.some((p) => p.id === a.target);
@@ -177,7 +201,8 @@ export const storySchema = z.strictObject({
           (a.kind === 'trace' && prop?.kind !== 'pendulum') ||
           (a.kind === 'spin' && !['globe', 'turntable', 'gear'].includes(prop?.kind ?? '')) ||
           (a.kind === 'roll' && prop?.kind !== 'cart') ||
-          (['walk', 'point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod', 'wave', 'fall'].includes(a.kind) && !actor)) {
+          ((a.kind === 'lift' || a.kind === 'drop') && !['crate', 'barrel', 'lamp', 'telescope'].includes(prop?.kind ?? '')) ||
+          (['walk', 'run', 'point', 'lean', 'react', 'shrug', 'inspect', 'flinch', 'nod', 'wave', 'fall'].includes(a.kind) && !actor)) {
         issue(path, `Unsupported action target ${a.target} for ${a.kind}`);
       }
       if (a.kind === 'swing' && Math.abs(a.amount) > 27) issue(path, 'Swing amplitude cannot exceed 27 degrees');
@@ -197,3 +222,8 @@ export type Story = z.infer<typeof storySchema>;
 export type Beat = Story['beats'][number];
 export type Scene = Story['scenes'][number];
 export type Vec = z.infer<typeof xyz>;
+
+export type HairStyle = typeof hairStyles[number];
+
+export type FacialCue = NonNullable<Beat['acting']>['cues'][number];
+export type WorldEvent = NonNullable<Beat['events']>[number];

@@ -38,7 +38,7 @@ def normalize(word, prev, dictionary, gap=" "):
     return num2words(n, to="ordinal" if ordinal else "year" if 1499 < n < 2100 else "cardinal")
 
 
-def make_chunks(beats, dictionary):
+def sentence_chunks(beats, dictionary):
     for beat in beats:
         chunk, pending = [], ""
         previous_word = ""
@@ -57,6 +57,32 @@ def make_chunks(beats, dictionary):
             chunk.append((word, spoken, before))
         if chunk:
             yield pending + beat[-1]["after"], chunk, .115
+
+
+def make_chunks(beats, dictionary):
+    chunk, pending = [], ""
+    previous_word = ""
+    previous_tail = ""
+    for beat in beats:
+        for index, entry in enumerate(beat):
+            before, word = entry["before"], entry["word"]
+            if index == 0 and chunk:
+                before = previous_tail + " " + before
+            spoken = normalize(word, previous_word, dictionary, before)
+            if previous_word and previous_word[-1].isdigit() and ("°" + word.lower()) in UNITS:
+                if before.strip() == "°":
+                    before = " "
+            previous_word = word
+            boundary = re.search(r"[.!?][\s\"”’]*$", before)
+            if chunk and ((boundary and len(pending) >= 155) or len(pending) + len(spoken) > 300):
+                yield pending + before.rstrip(), chunk, .085 if boundary else .035
+                chunk, pending = [], ""
+                before = ""
+            pending += before + spoken
+            chunk.append((word, spoken, before))
+        previous_tail = beat[-1]["after"]
+    if chunk:
+        yield pending + previous_tail, chunk, .085
 
 
 def pronunciation_groups(tokenizer, text, chunk, lang):
@@ -129,7 +155,8 @@ def align(kokoro, text, chunk, voice, speed):
 def main():
     payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     voice = os.environ.get("KOKORO_VOICE") or "am_fenrir"
-    speed = float(os.environ.get("KOKORO_SPEED") or 1.07)
+    connected = payload.get("delivery") == "connected"
+    speed = float(os.environ.get("KOKORO_SPEED") or (1.04 if connected else 1.07))
     if voice not in VOICES or not .92 <= speed <= 1.10:
         raise ValueError(f"Select a supported KOKORO_VOICE ({', '.join(VOICES)}) and speed in 0.92–1.10")
     manifest = assets()
@@ -142,7 +169,8 @@ def main():
     if not kokoro.has_timings:
         raise ValueError("Kokoro export must return model-native phoneme durations")
     dictionary = json.loads((ROOT / "config" / "pronunciations.json").read_text(encoding="utf-8"))
-    chunks = list(make_chunks(payload["beats"], dictionary))
+    chunker = make_chunks if connected else sentence_chunks
+    chunks = list(chunker(payload["beats"], dictionary))
     if not chunks:
         raise ValueError("Narration contains no speakable words")
     output = []
@@ -160,7 +188,8 @@ def main():
     with wave.open(sys.argv[2], "wb") as stream:
         stream.setparams((1, 2, RATE, 0, "NONE", "not compressed"))
         stream.writeframes((np.clip(rendered, -.999, .999) * 32767).astype("<i2").tobytes())
-    print(json.dumps({"voice": voice, "speed": speed, "words": words, "method": "kokoro-phoneme-duration"}))
+    print(json.dumps({"voice": voice, "speed": speed, "words": words, "method": "kokoro-phoneme-duration",
+                      "phrasing": "connected" if connected else "sentence"}))
 
 
 if __name__ == "__main__":

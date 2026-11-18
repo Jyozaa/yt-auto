@@ -3,6 +3,14 @@ name: Preview render
 on:
   workflow_dispatch:
     inputs:
+      story:
+        description: Story fixture
+        type: choice
+        required: true
+        default: examples/lake-peigneur-1980.json
+        options:
+          - examples/lake-peigneur-1980.json
+          - examples/foucault.json
       width:
         description: Preview width in pixels
         type: choice
@@ -31,21 +39,38 @@ jobs:
       - run: npm ci
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng libnss3 libgbm1 libasound2t64
       - uses: ./.github/actions/kokoro
-      - run: npm run preview -- examples/foucault.json --output out/preview
+      - name: Render the selected fixture
+        run: |
+          case "$STORY_PATH" in
+            examples/lake-peigneur-1980.json|examples/foucault.json) ;;
+            *) exit 2 ;;
+          esac
+          npm run preview -- "$STORY_PATH" --output out/preview
         env:
+          STORY_PATH: ${{ inputs.story }}
           PREVIEW_WIDTH: ${{ inputs.width }}
           REMOTION_TMP: ${{ runner.temp }}/yt-auto
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ always() }}
         with:
-          name: story-preview-${{ github.run_id }}
+          name: story-preview-qa-${{ github.run_id }}
           path: |
-            out/preview/short.mp4
             out/preview/words.json
             out/preview/voice-alignment.json
             out/preview/story-audit.json
             out/preview/cues.json
             out/preview/storyboard.json
-            out/preview/qa/
+            out/preview/qa/report.md
+            out/preview/qa/report.json
+            out/preview/qa/frames.json
           if-no-files-found: warn
+          retention-days: 7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: ${{ success() && github.event.repository.private }}
+        with:
+          name: story-preview-video-${{ github.run_id }}
+          path: |
+            out/preview/short.mp4
+            out/preview/qa/*.jpg
+          if-no-files-found: error
           retention-days: 7

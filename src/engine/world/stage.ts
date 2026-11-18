@@ -8,7 +8,10 @@ import {makeSky, colorSky} from './sky';
 import {NOINK} from '../effects/ink';
 import {cameraPose, choreograph, smooth} from '../camera/choreography';
 import {fps, type Story} from '../../story/schema';
-import type {Shot} from '../../story/timeline';
+import type {Shot, TimedWorldEvent} from '../../story/timeline';
+import {isTransfer, propAt} from '../../story/prop-motion';
+import {worldAt, type WorldState} from '../../story/world-events';
+import {buildKineticEnvironment, buildKineticProp, kineticEnvironments} from './kinetic';
 import {LOOK, LIGHTS} from './lights';
 import {CHAR, TONE, twoTone, untone} from './shade';
 import {ctex, rep, planksHD, grassHD, stoneHD, cloudHD, jit, cobbleHD} from './paint';
@@ -87,7 +90,9 @@ export class Stage {
   };
   private readonly animators: ((f: number) => void)[] = [];
 
-  constructor(readonly shot: Shot, story: Story, width: number, height: number) {
+  private readonly kinetic: ((state: WorldState, frame: number) => void)[] = [];
+
+  constructor(readonly shot: Shot, story: Story, width: number, height: number, private readonly events: TimedWorldEvent[] = []) {
     this.camera = new T.PerspectiveCamera(40, width / height, .17, 230);
     this.camera.layers.enable(NOINK);
     const light = shot.scene.light, lighting = LIGHTS[light], look = LOOK[light];
@@ -120,8 +125,15 @@ export class Stage {
     heading.normalize();
     // A higher side key reaches the tabletop through the workshop windows.
     const workshop = shot.scene.environment === 'workshop' && light === 'golden';
-    const az = T.MathUtils.degToRad(workshop ? 40 : lighting.az);
-    const el = T.MathUtils.degToRad(workshop ? 30 : lighting.el);
+
+    // A grazing backlight made the metal deck self-shadow in a checker pattern.
+    const rigDeck = shot.scene.environment === 'lake' && light === 'golden';
+    if (rigDeck) {
+      this.sun.shadow.bias = -.0014;
+      this.sun.shadow.normalBias = .052;
+    }
+    const az = T.MathUtils.degToRad(workshop ? 40 : rigDeck ? 34 : lighting.az);
+    const el = T.MathUtils.degToRad(workshop ? 30 : rigDeck ? 24 : lighting.el);
     this.sunDirection = new T.Vector3(
       (heading.x * Math.cos(az) - heading.z * Math.sin(az)) * Math.cos(el), Math.sin(el),
       (heading.z * Math.cos(az) + heading.x * Math.sin(az)) * Math.cos(el));
@@ -135,6 +147,8 @@ export class Stage {
       this.scene.add(group);
       this.placements.set(entry.id, group);
       this.prop(group, entry);
+      const movements = shot.actions.filter((action) => action.target === entry.id && isTransfer(action)).sort((a, b) => a.frame - b.frame);
+      if (movements.length) this.animators.push((frame) => group.position.set(...propAt(entry.at, movements, frame)));
     }
     this.cast = new StoryCast(this.scene, shot, story);
   }
@@ -201,6 +215,16 @@ export class Stage {
     const world = new T.Group();
     world.name = 'static-environment';
     this.scene.add(world);
+    const moving = kineticEnvironments.find((name) => name === environment);
+    if (moving) {
+      const surfaces = new Map<string, T.Material>();
+      this.kinetic.push(buildKineticEnvironment(this.assembly, world, (color) => {
+        let material = surfaces.get(color);
+        if (!material) { material = this.surface(color); surfaces.set(color, material); }
+        return material;
+      }, moving));
+      return;
+    }
     const floor = this.surface('#ffffff', this.repeat(
       environment === 'workshop' ? planksHD() : environment === 'terrace' ? grassHD() : environment === 'street' ? cobbleHD() : groundStone(), 15, 15));
     const base = this.mesh(world, new T.PlaneGeometry(104, 104), floor, 0, 0, 0);
@@ -300,6 +324,10 @@ export class Stage {
 
   private prop(g: Group, entry: Shot['scene']['props'][number]) {
     const {kind, id, color} = entry;
+    if (kind === 'rig' || kind === 'barge' || kind === 'skiff' || kind === 'shore-tree') {
+      this.kinetic.push(buildKineticProp(this.assembly, g, (shade) => this.surface(color ?? shade), entry));
+      return;
+    }
     const actions = this.shot.actions.filter((a) => a.target === id);
     const brass = this.surface(color ?? '#c99448');
     const dark = this.surface('#524551');
@@ -451,6 +479,10 @@ export class Stage {
     CHAR.uGrad.value = light.charGrad;
     CHAR.uBodyGrad.value = light.bodyGrad;
     CHAR.uSideTint.value.set(...light.sideTint);
+    if (this.kinetic.length) {
+      const state = worldAt(this.events, frame);
+      for (const animate of this.kinetic) animate(state, frame);
+    }
     for (const animate of this.animators) animate(frame);
     const lens = choreograph(this.camera, this.shot, frame, (id, at) =>
       this.cast.position(id, at) ?? this.placements.get(id)?.position);

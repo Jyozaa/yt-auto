@@ -47,7 +47,8 @@ export function structuralAudit(story: Story, allowLegacy = false) {
     }
     if (!story.beats.find(({role}) => role === 'turn')?.claims.length) add('sources', 'Tie the turning point to a cited claim.');
     if (!story.narrative || !story.sources.some(({kind}) => kind === 'primary')) add('sources', 'Supply a narrative brief and a primary source.');
-    if (story.beats.some(({visual, actions, camera}) => !visual || (!actions.length && camera.emphasis === undefined))) {
+    if (story.beats.some(({visual, actions, acting, events, camera}) => !visual ||
+      (!actions.length && !acting?.cues.length && !events?.length && !camera.keys?.length && camera.emphasis === undefined))) {
       add('feasibility', 'Specify a visual intention and staged action or camera emphasis for every beat.');
     }
   }
@@ -58,7 +59,9 @@ export function structuralAudit(story: Story, allowLegacy = false) {
     add('spoken-language', 'Try shorter spoken lines where a sentence exceeds 35 words.', false);
   }
   const estimatedSeconds = Math.round(wordCount / 3.7 * 10) / 10;
-  if ((estimatedSeconds < 55 || estimatedSeconds > 70) && strict) add('duration', 'At 3.7 words per second the script falls outside 55–70 seconds.');
+  if ((wordCount / 3.4 < 55 || wordCount / 4.1 > 70) && strict) {
+    add('duration', 'The script cannot fit 55–70 seconds within the planning pace of 3.4–4.1 words per second.');
+  }
   const scored = ['hook', 'escalation', 'structure', 'sources', 'feasibility', 'spoken-language', 'duration'];
   const structuralScores = Object.fromEntries(scored.map((check) => [check,
     issues.some((issue) => issue.check === check && issue.required) ? 0 : issues.some((issue) => issue.check === check) ? 1 : 2

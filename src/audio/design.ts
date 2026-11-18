@@ -39,6 +39,18 @@ export const arrangements: Record<Beat['role'], Arrangement> = {
   payoff: {root: 50, step: .52, pattern: [0, null, 7, 3, null, 12], voice: 'felt', sustain: .94}
 };
 
+// Lake score: an unresolved three-note motif returns in the refilled basin.
+// Shorter phrases and spaces around contact leave room for the water and metal.
+export const kineticArrangements: Record<Beat['role'], Arrangement> = {
+  hook: {root: 48, step: .64, pattern: [0, null, 7, null, 3, null, null, null], voice: 'felt', sustain: 1.2},
+  setting: {root: 48, step: .53, pattern: [0, 7, null, 3, null, 7, 10, null], voice: 'felt', sustain: .88},
+  escalation: {root: 48, step: .41, pattern: [0, null, 3, null, 6, null, null, 7], voice: 'reed', sustain: .65},
+  turn: {root: 45, step: .65, pattern: [0, null, null, null, 3, null, null, null], voice: 'strings', sustain: 1.6},
+  analogy: {root: 48, step: .63, pattern: [0, null, 7, null, 3, null, 10, null], voice: 'felt', sustain: .93},
+  consequence: {root: 48, step: .51, pattern: [0, null, 7, 9, 4, null, 10, 7], voice: 'reed', sustain: .91},
+  payoff: {root: 48, step: .64, pattern: [0, null, 7, null, 4, null, null, null], voice: 'felt', sustain: 1.2}
+};
+
 type Effect = {length: number; signal: Signal};
 export function sound(kind: CueKind, seed: number): Effect {
   const noise = random(seed);
